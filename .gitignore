@@ -1,0 +1,58 @@
+# ============================================================================
+# .gitignore — Raíz del Monorepo SII ITC (Examen 3)
+# ============================================================================
+
+# Dependencias Node.js (raíz, backend y frontend)
+node_modules/
+**/node_modules/
+.pnp
+.pnp.js
+
+# Compilados y bundles de producción (Vite / React)
+dist/
+dist-ssr/
+build/
+**/dist/
+**/build/
+.vite/
+
+# Variables de entorno y secretos (preservando plantillas .env.example)
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Archivos temporales de Supabase CLI / Deno
+supabase/.branches
+supabase/.temp
+.branches
+.temp
+
+# Logs y diagnósticos
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Cobertura de pruebas y cachés
+coverage/
+*.lcov
+.npm
+.eslintcache
+.cache/
+
+# Archivos de Sistema Operativo y Editores / IDEs
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+

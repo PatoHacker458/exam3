@@ -1,0 +1,47 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sii-itc-backend
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=${PORT:-4000}
+      - HOST=0.0.0.0
+      - NODE_ENV=${NODE_ENV:-development}
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+      - SII_API_BASE_URL=${SII_API_BASE_URL:-https://sii.celaya.tecnm.mx/api}
+      - CORS_ORIGIN=${CORS_ORIGIN:-*}
+      - SUPABASE_URL=${SUPABASE_URL:-}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-}
+    volumes:
+      - ./backend/src:/app/src
+    restart: unless-stopped
+    networks:
+      - lince-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+    container_name: sii-itc-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=${VITE_API_URL:-}
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/index.html:/app/index.html
+      - ./frontend/vite.config.js:/app/vite.config.js
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - lince-net
+
+networks:
+  lince-net:
+    driver: bridge

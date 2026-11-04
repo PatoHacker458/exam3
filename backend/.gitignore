@@ -1,0 +1,19 @@
+# ============================================================================
+# .gitignore — Backend Intermedio (Node.js + Express)
+# ============================================================================
+
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Variables de entorno reales (nunca subir credenciales ni llaves de Supabase)
+.env
+.env.*
+!.env.example
+
+# Archivos temporales y cobertura
+coverage/
+.DS_Store
+*.log
+
