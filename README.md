@@ -13,7 +13,7 @@ Aplicación web Full-Stack que consume los servicios REST oficiales del **Sistem
                          ▼
 [ Capa 1: Backend Local Propio / BFF (Node.js + Express :4000) ]
          ├── /api/sii/*   ──► [ Capa 2: API Institucional SII ITC (https://sii.celaya.tecnm.mx/api) ]
-         └── /api/extra/* ──► [ Persistencia Propia Supabase + Edge Functions (Punto 5 - LinceHub) ]
+         └── /api/extra/* ──► [ Supabase + Edge Functions; fallback local en memoria ]
 ```
 
 ### Decisiones Técnicas y Justificación del Stack
@@ -22,7 +22,7 @@ Aplicación web Full-Stack que consume los servicios REST oficiales del **Sistem
   - **React Router DOM v7**: Navegación fluida sin recargas de página entre `Login`, `Dashboard`, `Calificaciones`, `Kardex`, `Horarios` y `LinceHub`, con protección de rutas privadas mediante `ProtectedRoute`.
   - **Tailwind CSS v4 + Lucide React**: Diseño responsivo con identidad institucional Lince (TecNM Celaya), indicadores visuales tipo semáforo y componentes `Skeleton` de carga.
 - **Backend Intermedio — Node.js + Express**:
-  - Actúa como intermediario seguro entre el cliente web y `https://sii.celaya.tecnm.mx/api`, evitando problemas de CORS en el navegador, normalizando códigos de estado HTTP del SII (como respuestas `200 OK` cuyo payload interno reporta `status: 401`), aplicando cabeceras de seguridad (`Helmet`), control de tasa (`express-rate-limit`) y alojando la lógica de negocio adicional del Punto 5 (`/api/extra`).
+  - Actúa como intermediario seguro entre el cliente web y `https://sii.celaya.tecnm.mx/api`, evitando problemas de CORS en el navegador, normalizando códigos de estado HTTP del SII (como respuestas `200 OK` cuyo payload interno reporta `status: 401`), aplicando cabeceras de seguridad (`Helmet`), control de tasa (`express-rate-limit`) y alojando la lógica de negocio adicional del Punto 5 (`/api/extra`). Las asesorías y el diagnóstico académico siguen disponibles mediante datos en memoria cuando Supabase o su Edge Function no están disponibles; esos cambios no persisten al reiniciar el backend.
 
 ---
 
@@ -151,4 +151,3 @@ El repositorio incluye el archivo Blueprint [`render.yaml`](./render.yaml) para 
 > - **3. Calificaciones (`/calificaciones`)**: Filtrado en tiempo real por materia/periodo y semáforo de desempeño (Verde / Amarillo / Rojo).
 > - **4. Kardex y Horario (`/kardex`, `/horarios`)**: Historial académico y agenda semanal.
 > - **5. LinceHub (`/lince-hub`)**: Funcionalidad adicional estudiantil.
-

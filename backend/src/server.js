@@ -39,14 +39,14 @@ app.use(
   cors({
     origin: true,
     credentials: true,
-    methods: ['GET', 'POST', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   })
 );
 
 // Lista blanca de métodos HTTP permitidos (bloquea TRACE, PUT, DELETE no usados)
 app.use((req, res, next) => {
-  const allowedMethods = ['GET', 'POST', 'OPTIONS', 'HEAD'];
+  const allowedMethods = ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'];
   if (!allowedMethods.includes(req.method)) {
     return res.status(405).json({
       ok: false,
