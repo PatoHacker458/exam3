@@ -4,6 +4,7 @@
 // ============================================================================
 
 const express = require('express');
+const crypto = require('node:crypto');
 const { supabase, getSupabaseStatus } = require('../config/supabase');
 const authMiddleware = require('../middleware/auth.middleware');
 
@@ -17,6 +18,7 @@ let asesoriasMemoria = [
   { id: '5', materia: 'Tópicos Avanzados de Desarrollo Web', mentor: 'Diana Torres (9no Sem)', modalidad: 'En Línea', salon: 'Teams', cupo_maximo: 30, cupo_ocupado: 30, estado: 'Activa' },
   { id: '6', materia: 'Ciberseguridad', mentor: 'Luis Márquez (8vo Sem)', modalidad: 'Presencial', salon: 'LRC', cupo_maximo: 15, cupo_ocupado: 0, estado: 'Pendiente' },
 ];
+let solicitudesMemoria = [];
 
 function warnSupabaseFallback(operation, error) {
   console.warn(
@@ -27,6 +29,15 @@ function warnSupabaseFallback(operation, error) {
 
 function findMemorySession(id) {
   return asesoriasMemoria.findIndex((asesoria) => String(asesoria.id) === id);
+}
+
+function getAlumnoId(req) {
+  return (
+    req.user?.email ||
+    req.query?.alumno_id ||
+    req.body?.alumno_id ||
+    'l22030002@celaya.tecnm.mx'
+  );
 }
 
 function getAssessment(calificaciones, kardex) {
@@ -135,6 +146,40 @@ router.get('/asesorias', async (_req, res) => {
   return res.json({ data: asesoriasMemoria, source: 'memory' });
 });
 
+router.get('/mis-asesorias', authMiddleware, async (req, res) => {
+  const alumnoId = getAlumnoId(req);
+
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('solicitudes_asesoria')
+        .select('*, asesorias_itc(*)')
+        .eq('alumno_id', alumnoId);
+
+      if (error) {
+        warnSupabaseFallback('listar mis asesorías', error);
+      } else {
+        const misAsesorias = data
+          .map((solicitud) => solicitud.asesorias_itc)
+          .filter(Boolean);
+        return res.json({ data: misAsesorias, source: 'supabase' });
+      }
+    } catch (error) {
+      warnSupabaseFallback('listar mis asesorías', error);
+    }
+  }
+
+  const misAsesorias = solicitudesMemoria
+    .filter((solicitud) => solicitud.alumno_id === alumnoId)
+    .map((solicitud) =>
+      asesoriasMemoria.find(
+        (asesoria) => String(asesoria.id) === solicitud.asesoria_id,
+      ),
+    )
+    .filter(Boolean);
+  return res.json({ data: misAsesorias, source: 'memory' });
+});
+
 router.post('/asesorias', authMiddleware, async (req, res) => {
   const body =
     req.body && typeof req.body === 'object' && !Array.isArray(req.body)
@@ -155,9 +200,10 @@ router.post('/asesorias', authMiddleware, async (req, res) => {
     });
   }
 
+  const asesoriaData = { ...body };
+  delete asesoriaData.id;
   const nueva = {
-    ...body,
-    id: `${Date.now()}`,
+    ...asesoriaData,
     cupo_maximo: cupoMaximo,
     cupo_ocupado: 0,
     estado: 'Pendiente',
@@ -182,6 +228,7 @@ router.post('/asesorias', authMiddleware, async (req, res) => {
     }
   }
 
+  nueva.id = crypto.randomUUID();
   asesoriasMemoria.unshift(nueva);
   return res.status(201).json({ data: nueva, source: 'memory' });
 });
@@ -241,6 +288,9 @@ router.delete('/asesorias/:id', authMiddleware, async (req, res) => {
         asesoriasMemoria = asesoriasMemoria.filter(
           (asesoria) => String(asesoria.id) !== req.params.id,
         );
+        solicitudesMemoria = solicitudesMemoria.filter(
+          (solicitud) => solicitud.asesoria_id !== req.params.id,
+        );
         return res.json({ success: true, source: 'supabase' });
       }
     } catch (error) {
@@ -255,16 +305,37 @@ router.delete('/asesorias/:id', authMiddleware, async (req, res) => {
   asesoriasMemoria = asesoriasMemoria.filter(
     (asesoria) => String(asesoria.id) !== req.params.id,
   );
+  solicitudesMemoria = solicitudesMemoria.filter(
+    (solicitud) => solicitud.asesoria_id !== req.params.id,
+  );
   return res.json({ success: true, source: 'memory' });
 });
 
 router.post('/inscribir/:id', authMiddleware, async (req, res) => {
+  const asesoriaId = req.params.id;
+  const alumnoId = getAlumnoId(req);
+
   if (supabase) {
     try {
+      const { data: existente, error: existingError } = await supabase
+        .from('solicitudes_asesoria')
+        .select('id')
+        .eq('asesoria_id', asesoriaId)
+        .eq('alumno_id', alumnoId)
+        .maybeSingle();
+
+      if (existingError) {
+        warnSupabaseFallback('verificar inscripción existente', existingError);
+      } else if (existente) {
+        return res.status(400).json({
+          error: 'Ya estás inscrito en esta asesoría.',
+        });
+      }
+
       const { data: current, error: readError } = await supabase
         .from('asesorias_itc')
         .select('id, cupo_maximo, cupo_ocupado')
-        .eq('id', req.params.id)
+        .eq('id', asesoriaId)
         .maybeSingle();
 
       if (readError) {
@@ -274,7 +345,7 @@ router.post('/inscribir/:id', authMiddleware, async (req, res) => {
       } else if (Number(current.cupo_ocupado) >= Number(current.cupo_maximo)) {
         return res.status(409).json({ error: 'La asesoría ya no tiene cupo disponible.' });
       } else {
-        const memoryIndex = findMemorySession(req.params.id);
+        const memoryIndex = findMemorySession(asesoriaId);
         const currentMemory = {
           ...(memoryIndex >= 0 ? asesoriasMemoria[memoryIndex] : {}),
           ...current,
@@ -282,20 +353,44 @@ router.post('/inscribir/:id', authMiddleware, async (req, res) => {
         if (memoryIndex >= 0) asesoriasMemoria[memoryIndex] = currentMemory;
         else asesoriasMemoria.unshift(currentMemory);
 
-        const { data, error } = await supabase
-          .from('asesorias_itc')
-          .update({ cupo_ocupado: Number(current.cupo_ocupado) + 1 })
-          .eq('id', req.params.id)
-          .select()
-          .single();
+        const { error: insertError } = await supabase
+          .from('solicitudes_asesoria')
+          .insert([{ asesoria_id: asesoriaId, alumno_id: alumnoId }]);
 
-        if (error) {
-          warnSupabaseFallback('inscribir estudiante', error);
+        if (insertError) {
+          if (insertError.code === '23505') {
+            return res.status(400).json({
+              error: 'Ya estás inscrito en esta asesoría.',
+            });
+          }
+          warnSupabaseFallback('registrar solicitud', insertError);
         } else {
-          const index = findMemorySession(req.params.id);
-          if (index >= 0) asesoriasMemoria[index] = data;
-          else asesoriasMemoria.unshift(data);
-          return res.json({ success: true, data, source: 'supabase' });
+          const { data, error } = await supabase
+            .from('asesorias_itc')
+            .update({ cupo_ocupado: Number(current.cupo_ocupado) + 1 })
+            .eq('id', asesoriaId)
+            .select()
+            .single();
+
+          if (error) {
+            warnSupabaseFallback('actualizar cupo de inscripción', error);
+            const { error: rollbackError } = await supabase
+              .from('solicitudes_asesoria')
+              .delete()
+              .eq('asesoria_id', asesoriaId)
+              .eq('alumno_id', alumnoId);
+            if (rollbackError) {
+              warnSupabaseFallback('revertir solicitud incompleta', rollbackError);
+            }
+            return res.status(500).json({
+              error: 'No se pudo completar la inscripción en Supabase.',
+            });
+          } else {
+            const index = findMemorySession(asesoriaId);
+            if (index >= 0) asesoriasMemoria[index] = data;
+            else asesoriasMemoria.unshift(data);
+            return res.json({ success: true, data, source: 'supabase' });
+          }
         }
       }
     } catch (error) {
@@ -303,9 +398,17 @@ router.post('/inscribir/:id', authMiddleware, async (req, res) => {
     }
   }
 
-  const index = findMemorySession(req.params.id);
+  const index = findMemorySession(asesoriaId);
   if (index < 0) {
     return res.status(404).json({ error: 'Asesoría no encontrada.' });
+  }
+  const existente = solicitudesMemoria.find(
+    (solicitud) =>
+      solicitud.asesoria_id === asesoriaId &&
+      solicitud.alumno_id === alumnoId,
+  );
+  if (existente) {
+    return res.status(400).json({ error: 'Ya estás inscrito en esta asesoría.' });
   }
   const asesoria = asesoriasMemoria[index];
   if (Number(asesoria.cupo_ocupado) >= Number(asesoria.cupo_maximo)) {
@@ -315,11 +418,86 @@ router.post('/inscribir/:id', authMiddleware, async (req, res) => {
     ...asesoria,
     cupo_ocupado: Number(asesoria.cupo_ocupado) + 1,
   };
+  solicitudesMemoria.push({
+    id: crypto.randomUUID(),
+    asesoria_id: asesoriaId,
+    alumno_id: alumnoId,
+    fecha_solicitud: new Date().toISOString(),
+  });
   return res.json({
     success: true,
     data: asesoriasMemoria[index],
     source: 'memory',
   });
+});
+
+router.delete('/inscribir/:id', authMiddleware, async (req, res) => {
+  const asesoriaId = req.params.id;
+  const alumnoId = getAlumnoId(req);
+
+  if (supabase) {
+    try {
+      const { data: deleted, error } = await supabase
+        .from('solicitudes_asesoria')
+        .delete()
+        .eq('asesoria_id', asesoriaId)
+        .eq('alumno_id', alumnoId)
+        .select('id');
+
+      if (error) {
+        warnSupabaseFallback('cancelar inscripción', error);
+      } else {
+        if (Array.isArray(deleted) && deleted.length > 0) {
+          const { data: current, error: readError } = await supabase
+            .from('asesorias_itc')
+            .select('cupo_ocupado')
+            .eq('id', asesoriaId)
+            .maybeSingle();
+
+          if (readError) {
+            warnSupabaseFallback('consultar cupo al cancelar', readError);
+            return res.status(500).json({
+              error: 'La inscripción se canceló, pero no se pudo actualizar el cupo.',
+            });
+          } else if (current && Number(current.cupo_ocupado) > 0) {
+            const { error: updateError } = await supabase
+              .from('asesorias_itc')
+              .update({ cupo_ocupado: Number(current.cupo_ocupado) - 1 })
+              .eq('id', asesoriaId);
+            if (updateError) {
+              warnSupabaseFallback('actualizar cupo al cancelar', updateError);
+              return res.status(500).json({
+                error: 'La inscripción se canceló, pero no se pudo actualizar el cupo.',
+              });
+            }
+          }
+        }
+        return res.json({ success: true, source: 'supabase' });
+      }
+    } catch (error) {
+      warnSupabaseFallback('cancelar inscripción', error);
+    }
+  }
+
+  const solicitudIndex = solicitudesMemoria.findIndex(
+    (solicitud) =>
+      solicitud.asesoria_id === asesoriaId &&
+      solicitud.alumno_id === alumnoId,
+  );
+  if (solicitudIndex >= 0) {
+    solicitudesMemoria.splice(solicitudIndex, 1);
+    const asesoriaIndex = findMemorySession(asesoriaId);
+    if (
+      asesoriaIndex >= 0 &&
+      Number(asesoriasMemoria[asesoriaIndex].cupo_ocupado) > 0
+    ) {
+      asesoriasMemoria[asesoriaIndex] = {
+        ...asesoriasMemoria[asesoriaIndex],
+        cupo_ocupado: Number(asesoriasMemoria[asesoriaIndex].cupo_ocupado) - 1,
+      };
+    }
+  }
+  return res.json({ success: true, source: 'memory' });
 });
 
 router.post('/advisor', authMiddleware, async (req, res) => {

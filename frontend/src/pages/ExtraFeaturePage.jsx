@@ -1,6 +1,17 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Activity, Info, Plus, Settings, Users } from 'lucide-react';
+import {
+  Activity,
+  Bookmark,
+  Calendar,
+  CheckCircle2,
+  Info,
+  Plus,
+  Settings,
+  Users,
+  XCircle,
+} from 'lucide-react';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import Skeleton from '../components/ui/Skeleton';
 
 const INITIAL_FORM = {
@@ -8,6 +19,7 @@ const INITIAL_FORM = {
   mentor: '',
   modalidad: 'Presencial',
   salon: '',
+  horario: '',
   cupo_maximo: 10,
 };
 
@@ -45,11 +57,15 @@ function getCalificaciones(value, depth = 0) {
 }
 
 export default function ExtraFeaturePage() {
+  const { userEmail } = useAuth();
   const [activeTab, setActiveTab] = useState('asesorias');
+  const [asesoriasSubTab, setAsesoriasSubTab] = useState('explorar');
   const [asesorias, setAsesorias] = useState([]);
+  const [misAsesorias, setMisAsesorias] = useState([]);
   const [diagnostico, setDiagnostico] = useState(null);
   const [loading, setLoading] = useState(true);
   const [listError, setListError] = useState('');
+  const [misAsesoriasError, setMisAsesoriasError] = useState('');
   const [diagnosticoError, setDiagnosticoError] = useState('');
   const [actionMessage, setActionMessage] = useState(null);
   const [busyAction, setBusyAction] = useState('');
@@ -60,9 +76,17 @@ export default function ExtraFeaturePage() {
     setListError('');
     setDiagnosticoError('');
 
-    const [asesoriasResult, calificacionesResult, kardexResult] =
+    const [
+      asesoriasResult,
+      misAsesoriasResult,
+      calificacionesResult,
+      kardexResult,
+    ] =
       await Promise.allSettled([
         api.get('/extra/asesorias'),
+        api.get('/extra/mis-asesorias', {
+          params: { alumno_id: userEmail },
+        }),
         api.get('/sii/calificaciones'),
         api.get('/sii/kardex'),
       ]);
@@ -75,6 +99,19 @@ export default function ExtraFeaturePage() {
         getErrorMessage(
           asesoriasResult.reason,
           'No fue posible cargar las asesorías.',
+        ),
+      );
+    }
+
+    if (misAsesoriasResult.status === 'fulfilled') {
+      const payload = getPayload(misAsesoriasResult.value);
+      setMisAsesorias(Array.isArray(payload) ? payload : []);
+      setMisAsesoriasError('');
+    } else {
+      setMisAsesoriasError(
+        getErrorMessage(
+          misAsesoriasResult.reason,
+          'No fue posible cargar tus asesorías inscritas.',
         ),
       );
     }
@@ -122,7 +159,7 @@ export default function ExtraFeaturePage() {
     }
 
     if (showLoading) setLoading(false);
-  }, []);
+  }, [userEmail]);
 
   useEffect(() => {
     fetchData(true);
@@ -148,9 +185,26 @@ export default function ExtraFeaturePage() {
   const handleInscribir = (asesoria) =>
     runAction(
       `inscribir-${asesoria.id}`,
-      () => api.post(`/extra/inscribir/${asesoria.id}`),
+      () =>
+        api.post(`/extra/inscribir/${asesoria.id}`, {
+          alumno_id: userEmail,
+        }),
       'Inscripción realizada correctamente.',
     );
+
+  const handleCancelarInscripcion = (asesoria) => {
+    if (!window.confirm('¿Estás seguro de cancelar tu inscripción a esta asesoría?')) {
+      return;
+    }
+    return runAction(
+      `cancelar-${asesoria.id}`,
+      () =>
+        api.delete(`/extra/inscribir/${asesoria.id}`, {
+          params: { alumno_id: userEmail },
+        }),
+      'Inscripción cancelada correctamente.',
+    );
+  };
 
   const handleCrear = async (event) => {
     event.preventDefault();
@@ -162,6 +216,7 @@ export default function ExtraFeaturePage() {
           materia: newForm.materia.trim(),
           mentor: newForm.mentor.trim(),
           salon: newForm.salon.trim(),
+          horario: newForm.horario.trim(),
           cupo_maximo: Number(newForm.cupo_maximo),
         });
         setNewForm(INITIAL_FORM);
@@ -198,6 +253,7 @@ export default function ExtraFeaturePage() {
   const activeAdvisories = asesorias.filter(
     (asesoria) => asesoria.estado === 'Activa',
   );
+  const enrolledAdvisories = misAsesorias;
   const tabs = [
     { id: 'asesorias', label: 'Bolsa de Asesorías', Icon: Users },
     { id: 'diagnostico', label: 'Diagnóstico Inteligente', Icon: Activity },
@@ -262,6 +318,39 @@ export default function ExtraFeaturePage() {
 
       {activeTab === 'asesorias' && (
         <>
+          <div
+            className="flex w-max max-w-full gap-1 rounded-lg border border-slate-800 bg-slate-900 p-1 mb-6 overflow-x-auto"
+            role="tablist"
+            aria-label="Catálogo de asesorías"
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={asesoriasSubTab === 'explorar'}
+              onClick={() => setAsesoriasSubTab('explorar')}
+              className={`px-4 py-2 flex items-center gap-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
+                asesoriasSubTab === 'explorar'
+                  ? 'bg-slate-800 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Bookmark size={16} aria-hidden="true" /> Explorar Catálogo
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={asesoriasSubTab === 'mis-asesorias'}
+              onClick={() => setAsesoriasSubTab('mis-asesorias')}
+              className={`px-4 py-2 flex items-center gap-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
+                asesoriasSubTab === 'mis-asesorias'
+                  ? 'bg-slate-800 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <CheckCircle2 size={16} aria-hidden="true" /> Mis Asesorías (
+              {enrolledAdvisories.length})
+            </button>
+          </div>
           {listError && (
             <div
               role="alert"
@@ -270,16 +359,27 @@ export default function ExtraFeaturePage() {
               {listError}
             </div>
           )}
-          {activeAdvisories.length === 0 ? (
+          {asesoriasSubTab === 'mis-asesorias' && misAsesoriasError && (
+            <div
+              role="alert"
+              className="mb-5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300"
+            >
+              {misAsesoriasError}
+            </div>
+          )}
+          {asesoriasSubTab === 'explorar' && activeAdvisories.length === 0 ? (
             <div className="rounded-xl border border-slate-800 bg-slate-900 p-10 text-center text-slate-400">
               No hay asesorías activas disponibles en este momento.
             </div>
-          ) : (
+          ) : asesoriasSubTab === 'explorar' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {activeAdvisories.map((asesoria) => {
                 const occupied = Number(asesoria.cupo_ocupado) || 0;
                 const maximum = Number(asesoria.cupo_maximo) || 0;
                 const full = maximum > 0 && occupied >= maximum;
+                const isEnrolled = enrolledAdvisories.some(
+                  (inscrita) => String(inscrita.id) === String(asesoria.id),
+                );
                 const isBusy = busyAction === `inscribir-${asesoria.id}`;
 
                 return (
@@ -302,33 +402,115 @@ export default function ExtraFeaturePage() {
                       <p className="text-sm text-slate-400 mb-4">
                         Mentor: {asesoria.mentor}
                       </p>
-                      <div className="bg-slate-950 p-3 rounded-lg text-sm flex items-center gap-3">
-                        <Info
-                          size={16}
-                          className="text-slate-500 shrink-0"
-                          aria-hidden="true"
-                        />
-                        <span className="text-slate-400">Aula:</span>
-                        <span className="font-semibold text-slate-300">
-                          {asesoria.salon || 'Por confirmar'}
-                        </span>
+                      <div className="space-y-2">
+                        <div className="bg-slate-950 p-3 rounded-lg text-sm flex items-center gap-3">
+                          <Calendar
+                            size={16}
+                            className="text-slate-500 shrink-0"
+                            aria-hidden="true"
+                          />
+                          <span className="text-slate-300">
+                            {asesoria.horario || 'Horario por definir'}
+                          </span>
+                        </div>
+                        <div className="bg-slate-950 p-3 rounded-lg text-sm flex items-center gap-3">
+                          <Info
+                            size={16}
+                            className="text-slate-500 shrink-0"
+                            aria-hidden="true"
+                          />
+                          <span className="text-slate-400">Aula:</span>
+                          <span className="font-semibold text-slate-300">
+                            {asesoria.salon || 'Por confirmar'}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => handleInscribir(asesoria)}
-                      disabled={full || Boolean(busyAction)}
-                      className="mt-6 w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-800 disabled:text-slate-500 text-white font-medium rounded-lg transition-colors"
+                      disabled={full || isEnrolled || Boolean(busyAction)}
+                      className={`mt-6 w-full py-2.5 font-medium rounded-lg transition-colors ${
+                        isEnrolled
+                          ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+                          : 'bg-blue-600 hover:bg-blue-700 disabled:bg-slate-800 disabled:text-slate-500 text-white'
+                      }`}
                     >
                       {isBusy
                         ? 'Inscribiendo...'
-                        : full
-                          ? 'Cupo Lleno'
-                          : 'Inscribirme Ahora'}
+                        : isEnrolled
+                          ? 'Inscripción Confirmada'
+                          : full
+                            ? 'Cupo Lleno'
+                            : 'Inscribirme Ahora'}
                     </button>
                   </article>
                 );
               })}
+            </div>
+          ) : enrolledAdvisories.length === 0 ? (
+            <div className="rounded-xl border border-slate-800 bg-slate-900 p-10 text-center text-slate-400">
+              <CheckCircle2
+                size={48}
+                className="mx-auto mb-4 opacity-20"
+                aria-hidden="true"
+              />
+              Aún no te has inscrito a ninguna asesoría.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {enrolledAdvisories.map((asesoria) => (
+                <article
+                  key={asesoria.id}
+                  className="bg-emerald-900/10 border border-emerald-500/30 rounded-xl p-6 shadow-sm flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex justify-between items-start mb-3 gap-3">
+                      <span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-1 rounded font-bold flex items-center gap-1">
+                        <CheckCircle2 size={12} aria-hidden="true" /> Confirmada
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        {asesoria.modalidad || 'Modalidad no indicada'}
+                      </span>
+                    </div>
+                    <h2 className="text-lg font-bold text-white mb-1 leading-tight">
+                      {asesoria.materia}
+                    </h2>
+                    <p className="text-sm text-slate-400 mb-4">
+                      Mentor: {asesoria.mentor}
+                    </p>
+                    <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-800 space-y-2 mb-4">
+                      <div className="flex items-center gap-3 text-sm text-slate-200">
+                        <Calendar
+                          size={16}
+                          className="text-blue-400 shrink-0"
+                          aria-hidden="true"
+                        />
+                        <span>{asesoria.horario || 'Horario por definir'}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm text-slate-200">
+                        <Info
+                          size={16}
+                          className="text-amber-400 shrink-0"
+                          aria-hidden="true"
+                        />
+                        <span>{asesoria.salon || 'Aula por confirmar'}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={Boolean(busyAction)}
+                    onClick={() => handleCancelarInscripcion(asesoria)}
+                    className="mt-2 w-full py-2.5 bg-transparent border border-rose-500/30 text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/50 disabled:opacity-50 font-medium rounded-lg transition-colors flex justify-center items-center gap-2"
+                  >
+                    <XCircle size={16} aria-hidden="true" />
+                    {busyAction === `cancelar-${asesoria.id}`
+                      ? 'Cancelando...'
+                      : 'Cancelar Asistencia'}
+                  </button>
+                </article>
+              ))}
             </div>
           )}
         </>
@@ -534,6 +716,26 @@ export default function ExtraFeaturePage() {
                 </div>
                 <div>
                   <label
+                    htmlFor="asesoria-horario"
+                    className="text-xs text-slate-400 mb-1 block"
+                  >
+                    Día y horario
+                  </label>
+                  <input
+                    id="asesoria-horario"
+                    required
+                    maxLength={150}
+                    type="text"
+                    placeholder="Ej. Lunes y Miércoles 16:00 - 18:00"
+                    value={newForm.horario}
+                    onChange={(event) =>
+                      setNewForm({ ...newForm, horario: event.target.value })
+                    }
+                    className="w-full px-4 py-2 bg-slate-950 text-slate-100 border border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label
                     htmlFor="asesoria-salon"
                     className="text-xs text-slate-400 mb-1 block"
                   >
@@ -567,6 +769,7 @@ export default function ExtraFeaturePage() {
                   <tr>
                     <th scope="col" className="px-6 py-4">Materia</th>
                     <th scope="col" className="px-6 py-4">Mentor</th>
+                    <th scope="col" className="px-6 py-4">Horario</th>
                     <th scope="col" className="px-6 py-4 text-center">
                       Inscritos
                     </th>
@@ -582,6 +785,9 @@ export default function ExtraFeaturePage() {
                       </td>
                       <td className="px-6 py-4 text-slate-400">
                         {asesoria.mentor}
+                      </td>
+                      <td className="px-6 py-4 text-slate-400">
+                        {asesoria.horario || 'Por definir'}
                       </td>
                       <td className="px-6 py-4 text-center font-mono">
                         {asesoria.cupo_ocupado}/{asesoria.cupo_maximo}
@@ -622,7 +828,7 @@ export default function ExtraFeaturePage() {
                   {asesorias.length === 0 && (
                     <tr>
                       <td
-                        colSpan={5}
+                        colSpan={6}
                         className="px-6 py-8 text-center text-slate-400"
                       >
                         No hay asesorías registradas.
