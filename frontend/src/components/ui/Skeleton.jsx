@@ -6,7 +6,7 @@ import React from 'react';
 export function Skeleton({ className = '' }) {
   return (
     <div
-      className={`animate-pulse rounded-xl bg-slate-800/75 border border-slate-700/30 ${className}`}
+      className={`animate-pulse rounded-xl bg-zinc-300/75 border border-zinc-400/30 ${className}`}
       aria-hidden="true"
     />
   );
@@ -19,7 +19,7 @@ export function DashboardSkeleton() {
   return (
     <div className="space-y-6" role="status" aria-label="Cargando información del estudiante">
       {/* Banner principal de perfil */}
-      <div className="rounded-2xl bg-slate-900/80 border border-slate-800 p-6">
+      <div className="rounded-2xl bg-zinc-100 border border-zinc-300 p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
           <Skeleton className="w-20 h-20 rounded-2xl shrink-0" />
           <div className="space-y-3 flex-1 w-full">
@@ -39,7 +39,7 @@ export function DashboardSkeleton() {
         {[1, 2, 3, 4].map((item) => (
           <div
             key={item}
-            className="rounded-2xl bg-slate-900/80 border border-slate-800 p-5 space-y-3"
+            className="rounded-2xl bg-zinc-100 border border-zinc-300 p-5 space-y-3"
           >
             <div className="flex items-center justify-between">
               <Skeleton className="h-4 w-24" />
@@ -53,7 +53,7 @@ export function DashboardSkeleton() {
 
       {/* Panel de expediente detallado */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 rounded-2xl bg-slate-900/80 border border-slate-800 p-6 space-y-4">
+        <div className="lg:col-span-2 rounded-2xl bg-zinc-100 border border-zinc-300 p-6 space-y-4">
           <Skeleton className="h-6 w-56" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[1, 2, 3, 4, 5, 6].map((field) => (
@@ -61,7 +61,7 @@ export function DashboardSkeleton() {
             ))}
           </div>
         </div>
-        <div className="rounded-2xl bg-slate-900/80 border border-slate-800 p-6 space-y-4">
+        <div className="rounded-2xl bg-zinc-100 border border-zinc-300 p-6 space-y-4">
           <Skeleton className="h-6 w-44" />
           <Skeleton className="h-32 w-full" />
           <Skeleton className="h-12 w-full" />
@@ -81,7 +81,7 @@ export function CalificacionesSkeleton() {
         {[1, 2, 3].map((idx) => (
           <div
             key={idx}
-            className="rounded-2xl bg-slate-900/80 border border-slate-800 p-5 space-y-3"
+            className="rounded-2xl bg-zinc-100 border border-zinc-300 p-5 space-y-3"
           >
             <Skeleton className="h-4 w-32" />
             <Skeleton className="h-8 w-20" />
@@ -89,7 +89,7 @@ export function CalificacionesSkeleton() {
         ))}
       </div>
 
-      <div className="rounded-2xl bg-slate-900/80 border border-slate-800 p-4 flex flex-col sm:flex-row gap-3">
+      <div className="rounded-2xl bg-zinc-100 border border-zinc-300 p-4 flex flex-col sm:flex-row gap-3">
         <Skeleton className="h-10 flex-1" />
         <Skeleton className="h-10 w-44" />
         <Skeleton className="h-10 w-32" />
@@ -99,7 +99,7 @@ export function CalificacionesSkeleton() {
         {[1, 2, 3, 4, 5, 6].map((card) => (
           <div
             key={card}
-            className="rounded-2xl bg-slate-900/80 border border-slate-800 p-5 space-y-4"
+            className="rounded-2xl bg-zinc-100 border border-zinc-300 p-5 space-y-4"
           >
             <div className="flex justify-between items-start gap-3">
               <div className="space-y-2 flex-1">
@@ -118,4 +118,3 @@ export function CalificacionesSkeleton() {
 }
 
 export default Skeleton;
-

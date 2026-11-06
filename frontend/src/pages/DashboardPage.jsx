@@ -29,30 +29,6 @@ import {
 
 /**
  * Mapea con precisión la estructura real de GET /api/movil/estudiante del SII ITC:
- * {
- *   "code": 200,
- *   "message": "Bienvenido al aplicación del tecnm",
- *   "flag": true,
- *   "data": {
- *     "numero_control": "22030915",
- *     "persona": "EMILIO SEBASTIAN CHAVEZ VEGA",
- *     "email": "l22030915@celaya.tecnm.mx",
- *     "semestre": 9,
- *     "num_mat_rep_no_acreditadas": "0",
- *     "creditos_acumulados": "231",
- *     "promedio_ponderado": "87.3125",
- *     "promedio_aritmetico": "85.530612244898",
- *     "materias_cursadas": "50",
- *     "materias_reprobadas": "1",
- *     "materias_aprobadas": "49",
- *     "creditos_complementarios": 0,
- *     "porcentaje_avance": 89,
- *     "num_materias_rep_primera": null,
- *     "num_materias_rep_segunda": null,
- *     "percentaje_avance_cursando": 58,
- *     "foto": "/9j/4AAQSkZJRgABAQAAAQABAAD..."
- *   }
- * }
  */
 function normalizeStudentProfile(rawPayload, fallbackEmail) {
   const payload = unwrapSiiPayload(rawPayload);
@@ -61,7 +37,6 @@ function normalizeStudentProfile(rawPayload, fallbackEmail) {
       ? payload.estudiante || payload.alumno || payload
       : {};
 
-  // `persona` en el SII ITC viene como string directo ("EMILIO SEBASTIAN CHAVEZ VEGA")
   const fullName =
     pickText(student, [
       'persona',
@@ -110,7 +85,6 @@ function normalizeStudentProfile(rawPayload, fallbackEmail) {
     toNumberOrNull(student.creditos_complementarios) ?? 0;
 
   const porcentajeAvance = toNumberOrNull(student.porcentaje_avance) ?? 0;
-  // Incluye soporte para el typo nativo del SII ITC: `percentaje_avance_cursando`
   const porcentajeAvanceCursando =
     toNumberOrNull(
       student.percentaje_avance_cursando ?? student.porcentaje_avance_cursando
@@ -129,7 +103,6 @@ function normalizeStudentProfile(rawPayload, fallbackEmail) {
     student.foto || student.url_foto || student.imagen
   );
 
-  // Construir ficha estructurada y legible con etiquetas en español institucional
   const structuredDetails = [
     {
       key: 'numero_control',
@@ -297,8 +270,8 @@ export default function DashboardPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">Expediente Estudiantil</h1>
-          <p className="text-sm text-slate-400">
+          <h1 className="text-2xl font-bold text-zinc-900">Expediente Estudiantil</h1>
+          <p className="text-sm text-zinc-600">
             Cargando información académica del estudiante...
           </p>
         </div>
@@ -309,21 +282,21 @@ export default function DashboardPage() {
 
   if (errorMsg) {
     return (
-      <div className="rounded-2xl bg-slate-900 border border-rose-500/30 p-8 text-center max-w-2xl mx-auto my-8 space-y-5">
-        <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center mx-auto">
-          <AlertTriangle className="w-7 h-7 text-rose-400" />
+      <div className="rounded-2xl bg-zinc-100 border border-rose-300 p-8 text-center max-w-2xl mx-auto my-8 space-y-5 shadow-sm">
+        <div className="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center mx-auto">
+          <AlertTriangle className="w-7 h-7 text-rose-600" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-xl font-bold text-white">
+          <h2 className="text-xl font-bold text-zinc-900">
             No se pudo cargar el expediente
           </h2>
-          <p className="text-sm text-slate-300 leading-relaxed">{errorMsg}</p>
+          <p className="text-sm text-zinc-600 leading-relaxed">{errorMsg}</p>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
           <button
             type="button"
             onClick={fetchStudentProfile}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-sm transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition-colors cursor-pointer"
           >
             <RefreshCw className="w-4 h-4" />
             <span>Reintentar</span>
@@ -331,7 +304,7 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={logout}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-200 hover:bg-zinc-300 border border-zinc-300 text-zinc-800 font-semibold text-sm transition-colors cursor-pointer"
           >
             <span>Volver al inicio de sesión</span>
           </button>
@@ -349,12 +322,12 @@ export default function DashboardPage() {
 
   const averageColorClass =
     profile.promedioPonderado === null
-      ? 'text-emerald-400'
+      ? 'text-emerald-700'
       : profile.promedioPonderado >= 80
-      ? 'text-emerald-400'
+      ? 'text-emerald-700'
       : profile.promedioPonderado >= 70
-      ? 'text-amber-400'
-      : 'text-rose-400';
+      ? 'text-amber-700'
+      : 'text-rose-700';
 
   const initials = profile.fullName
     .split(/\s+/)
@@ -364,14 +337,14 @@ export default function DashboardPage() {
     .join('');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-zinc-900 bg-[#e6e6e6] min-h-screen p-4 sm:p-6 lg:p-8 rounded-xl">
       {/* Encabezado Superior */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-400">
+          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">
             Expediente Estudiantil
           </p>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mt-0.5">
+          <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 mt-0.5 tracking-tight">
             {profile.fullName}
           </h1>
         </div>
@@ -380,16 +353,16 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={() => setShowSensitivePii((prev) => !prev)}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-medium text-slate-300 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-300 text-xs font-medium text-zinc-700 transition-colors cursor-pointer shadow-sm"
           >
             {showSensitivePii ? (
               <>
-                <EyeOff className="w-3.5 h-3.5 text-amber-400" />
+                <EyeOff className="w-3.5 h-3.5 text-amber-600" />
                 <span>Ocultar correo completo</span>
               </>
             ) : (
               <>
-                <Eye className="w-3.5 h-3.5 text-emerald-400" />
+                <Eye className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Mostrar correo completo</span>
               </>
             )}
@@ -398,16 +371,16 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={fetchStudentProfile}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-medium text-slate-300 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-300 text-xs font-medium text-zinc-700 transition-colors cursor-pointer shadow-sm"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
+            <RefreshCw className="w-3.5 h-3.5 text-emerald-600" />
             <span>Actualizar</span>
           </button>
         </div>
       </div>
 
       {/* Tarjeta Principal de Perfil con Fotografía Base64 Real */}
-      <section className="rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950/40 border border-slate-800 p-6 sm:p-8 shadow-xl">
+      <section className="rounded-2xl bg-white border border-zinc-300 p-6 sm:p-8 shadow-sm">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
             {profile.foto && !photoLoadError ? (
@@ -415,40 +388,40 @@ export default function DashboardPage() {
                 src={profile.foto}
                 alt={`Fotografía de ${profile.fullName}`}
                 onError={() => setPhotoLoadError(true)}
-                className="w-24 h-28 rounded-2xl object-cover border-2 border-emerald-500/40 shadow-lg shrink-0 bg-slate-950"
+                className="w-24 h-28 rounded-2xl object-cover border-2 border-emerald-200 shadow-sm shrink-0 bg-zinc-100"
               />
             ) : (
-              <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-2xl font-extrabold text-white shadow-lg border border-emerald-400/30 shrink-0">
+              <div className="w-24 h-24 rounded-2xl bg-emerald-50 flex items-center justify-center text-2xl font-extrabold text-emerald-700 shadow-sm border border-emerald-200 shrink-0">
                 {initials || <User className="w-9 h-9" />}
               </div>
             )}
 
             <div className="space-y-2.5">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   ESTUDIANTE INSCRITO
                 </span>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-semibold bg-slate-800 text-slate-200 border border-slate-700">
-                  <Hash className="w-3 h-3 text-emerald-400" />
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-semibold bg-zinc-100 text-zinc-700 border border-zinc-300">
+                  <Hash className="w-3 h-3 text-emerald-600" />
                   {profile.numeroControl}
                 </span>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-500/15 text-sky-300 border border-sky-500/30">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-sky-100 text-sky-800 border border-sky-300">
                   {profile.semestreDisplay} Semestre
                 </span>
               </div>
 
-              <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 tracking-tight">
                 {profile.fullName}
               </h2>
 
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs sm:text-sm text-slate-300">
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs sm:text-sm text-zinc-600 font-medium">
                 <span className="inline-flex items-center gap-1.5">
-                  <Building2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <Building2 className="w-4 h-4 text-emerald-600 shrink-0" />
                   {profile.carrera}
                 </span>
-                <span className="inline-flex items-center gap-1.5 font-mono text-slate-300">
-                  <Mail className="w-4 h-4 text-teal-400 shrink-0" />
+                <span className="inline-flex items-center gap-1.5 font-mono text-zinc-600">
+                  <Mail className="w-4 h-4 text-teal-600 shrink-0" />
                   {showSensitivePii
                     ? profile.email
                     : maskInstitutionalEmail(profile.email)}
@@ -458,22 +431,22 @@ export default function DashboardPage() {
           </div>
 
           {/* Resumen de Avance Reticular en el Banner */}
-          <div className="w-full lg:w-72 p-4 rounded-xl bg-slate-950/75 border border-slate-800/90 space-y-2.5">
+          <div className="w-full lg:w-72 p-4 rounded-xl bg-zinc-50 border border-zinc-200 space-y-2.5 shadow-sm">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-400 font-medium">Avance Reticular</span>
-              <span className="font-mono font-bold text-emerald-400">
+              <span className="text-zinc-600 font-bold">Avance Reticular</span>
+              <span className="font-mono font-bold text-emerald-700">
                 {profile.porcentajeAvance}%
               </span>
             </div>
-            <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+            <div className="w-full h-2 rounded-full bg-zinc-200 overflow-hidden border border-zinc-300">
               <div
-                className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-500"
+                className="h-full bg-emerald-500 rounded-full transition-all duration-500"
                 style={{
                   width: `${Math.min(100, Math.max(0, profile.porcentajeAvance))}%`,
                 }}
               />
             </div>
-            <div className="flex items-center justify-between text-[11px] text-slate-400 pt-0.5">
+            <div className="flex items-center justify-between text-[11px] text-zinc-500 font-medium pt-0.5">
               <span>Avance cursando: {profile.porcentajeAvanceCursando}%</span>
               <span>{profile.creditosAcumulados ?? 0} créditos</span>
             </div>
@@ -484,12 +457,12 @@ export default function DashboardPage() {
       {/* 5 Tarjetas de Indicadores Clave (Soporte Ultrawide 5 Columnas) */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
         {/* KPI 1: Promedio Ponderado y Aritmético */}
-        <div className="rounded-2xl bg-slate-900/90 border border-slate-800 p-5 flex flex-col justify-between">
+        <div className="rounded-2xl bg-white border border-zinc-300 p-5 flex flex-col justify-between shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
               Promedio Ponderado
             </span>
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
               <Award className="w-5 h-5" />
             </div>
           </div>
@@ -497,112 +470,112 @@ export default function DashboardPage() {
             <p className={`text-2xl font-extrabold font-mono ${averageColorClass}`}>
               {profile.promedioPonderadoDisplay}
             </p>
-            <span className="text-xs text-slate-400">/ 100</span>
+            <span className="text-xs text-zinc-500 font-medium">/ 100</span>
           </div>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-zinc-500 font-medium">
             Promedio aritmético:{' '}
-            <span className="text-slate-200 font-mono font-semibold">
+            <span className="text-zinc-800 font-mono font-bold">
               {profile.promedioAritmeticoDisplay}
             </span>
           </p>
         </div>
 
         {/* KPI 2: Créditos Acumulados */}
-        <div className="rounded-2xl bg-slate-900/90 border border-slate-800 p-5 flex flex-col justify-between">
+        <div className="rounded-2xl bg-white border border-zinc-300 p-5 flex flex-col justify-between shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
               Créditos Acumulados
             </span>
-            <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+            <div className="w-9 h-9 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-600">
               <Layers className="w-5 h-5" />
             </div>
           </div>
           <div className="my-3 flex items-baseline gap-2">
-            <p className="text-2xl font-extrabold font-mono text-white">
+            <p className="text-2xl font-extrabold font-mono text-zinc-900">
               {profile.creditosAcumulados ?? '—'}
             </p>
-            <span className="text-xs font-semibold text-purple-400">
+            <span className="text-xs font-bold text-purple-700">
               ({profile.porcentajeAvance}% avance)
             </span>
           </div>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-zinc-500 font-medium">
             Complementarios:{' '}
-            <span className="text-slate-200 font-mono font-semibold">
+            <span className="text-zinc-800 font-mono font-bold">
               {profile.creditosComplementarios}
             </span>
           </p>
         </div>
 
         {/* KPI 3: Semestre y Avance Cursando */}
-        <div className="rounded-2xl bg-slate-900/90 border border-slate-800 p-5 flex flex-col justify-between">
+        <div className="rounded-2xl bg-white border border-zinc-300 p-5 flex flex-col justify-between shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
               Semestre Inscrito
             </span>
-            <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+            <div className="w-9 h-9 rounded-xl bg-sky-50 border border-sky-200 flex items-center justify-center text-sky-600">
               <BookOpen className="w-5 h-5" />
             </div>
           </div>
           <div className="my-3">
-            <p className="text-2xl font-extrabold text-white">
+            <p className="text-2xl font-extrabold text-zinc-900 tracking-tight">
               {profile.semestreDisplay} Semestre
             </p>
           </div>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-zinc-500 font-medium">
             Avance cursando:{' '}
-            <span className="text-sky-300 font-mono font-semibold">
+            <span className="text-sky-700 font-mono font-bold">
               {profile.porcentajeAvanceCursando}%
             </span>
           </p>
         </div>
 
         {/* KPI 4: Materias Aprobadas vs Cursadas */}
-        <div className="rounded-2xl bg-slate-900/90 border border-slate-800 p-5 flex flex-col justify-between">
+        <div className="rounded-2xl bg-white border border-zinc-300 p-5 flex flex-col justify-between shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
               Materias Aprobadas
             </span>
-            <div className="w-9 h-9 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400">
+            <div className="w-9 h-9 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-600">
               <CheckCheck className="w-5 h-5" />
             </div>
           </div>
           <div className="my-3 flex items-baseline gap-2">
-            <p className="text-2xl font-extrabold font-mono text-white">
+            <p className="text-2xl font-extrabold font-mono text-zinc-900">
               {profile.materiasAprobadas}
             </p>
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-zinc-500 font-medium">
               / {profile.materiasCursadas} cursadas
             </span>
           </div>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-zinc-500 font-medium">
             Efectividad académica:{' '}
-            <span className="text-emerald-400 font-mono font-semibold">
+            <span className="text-emerald-700 font-mono font-bold">
               {approvalRatePct}%
             </span>
           </p>
         </div>
 
         {/* KPI 5: Materias Reprobadas / No Acreditadas */}
-        <div className="rounded-2xl bg-slate-900/90 border border-slate-800 p-5 flex flex-col justify-between">
+        <div className="rounded-2xl bg-white border border-zinc-300 p-5 flex flex-col justify-between shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
               Índice de Regularidad
             </span>
-            <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+            <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600">
               <TrendingUp className="w-5 h-5" />
             </div>
           </div>
           <div className="my-3 flex items-baseline gap-2">
-            <p className="text-2xl font-extrabold font-mono text-white">
+            <p className="text-2xl font-extrabold font-mono text-zinc-900">
               {profile.materiasReprobadas}
             </p>
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-zinc-500 font-medium">
               {profile.materiasReprobadas === 1 ? 'reprobada' : 'reprobadas'}
             </span>
           </div>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-zinc-500 font-medium">
             No acreditadas:{' '}
-            <span className="text-slate-200 font-mono font-semibold">
+            <span className="text-zinc-800 font-mono font-bold">
               {profile.materiasNoAcreditadas}
             </span>
           </p>
@@ -611,9 +584,9 @@ export default function DashboardPage() {
 
       {/* Panel Inferior Adaptado a Ultrawide */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-        <section className="xl:col-span-3 rounded-2xl bg-slate-900/90 border border-slate-800 p-6">
+        <section className="xl:col-span-3 rounded-2xl bg-white border border-zinc-300 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-5">
-            <h3 className="text-base font-bold text-white">
+            <h3 className="text-base font-bold text-zinc-900">
               Resumen de Trayectoria Académica
             </h3>
           </div>
@@ -628,13 +601,13 @@ export default function DashboardPage() {
               return (
                 <div
                   key={attr.key}
-                  className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800/80 flex flex-col justify-between"
+                  className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-200 flex flex-col justify-between shadow-sm"
                 >
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">
                     {attr.label}
                   </span>
                   <span
-                    className={`text-sm font-semibold text-slate-100 mt-1 break-words ${
+                    className={`text-sm font-bold text-zinc-800 mt-1 break-words ${
                       attr.mono ? 'font-mono' : ''
                     }`}
                   >
@@ -647,74 +620,74 @@ export default function DashboardPage() {
         </section>
 
         {/* Accesos Directos */}
-        <section className="rounded-2xl bg-slate-900/90 border border-slate-800 p-6 flex flex-col justify-between space-y-5">
+        <section className="rounded-2xl bg-white border border-zinc-300 p-6 flex flex-col justify-between space-y-5 shadow-sm">
           <div>
-            <h3 className="text-base font-bold text-white mb-1">
+            <h3 className="text-base font-bold text-zinc-900 mb-1">
               Módulos de Consulta
             </h3>
-            <p className="text-xs text-slate-400 mb-4">
+            <p className="text-xs text-zinc-500 font-medium mb-4">
               Accede a tus calificaciones del semestre, kárdex y horario
             </p>
 
             <div className="space-y-3">
               <Link
                 to="/calificaciones"
-                className="flex items-center justify-between p-3.5 rounded-xl bg-slate-950/80 hover:bg-emerald-500/10 border border-slate-800 hover:border-emerald-500/30 transition-all group"
+                className="flex items-center justify-between p-3.5 rounded-xl bg-zinc-50 hover:bg-emerald-50 border border-zinc-200 hover:border-emerald-200 transition-all group shadow-sm"
               >
                 <div>
-                  <p className="text-sm font-semibold text-white group-hover:text-emerald-300">
+                  <p className="text-sm font-bold text-zinc-800 group-hover:text-emerald-700">
                     Calificaciones del Periodo
                   </p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-zinc-500 font-medium">
                     Unidades evaluadas y promedios
                   </p>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-400 shrink-0" />
+                <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:text-emerald-600 shrink-0" />
               </Link>
 
               <Link
                 to="/kardex"
-                className="flex items-center justify-between p-3.5 rounded-xl bg-slate-950/80 hover:bg-emerald-500/10 border border-slate-800 hover:border-emerald-500/30 transition-all group"
+                className="flex items-center justify-between p-3.5 rounded-xl bg-zinc-50 hover:bg-emerald-50 border border-zinc-200 hover:border-emerald-200 transition-all group shadow-sm"
               >
                 <div>
-                  <p className="text-sm font-semibold text-white group-hover:text-emerald-300">
+                  <p className="text-sm font-bold text-zinc-800 group-hover:text-emerald-700">
                     Kardex Académico
                   </p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-zinc-500 font-medium">
                     Historial completo de asignaturas
                   </p>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-400 shrink-0" />
+                <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:text-emerald-600 shrink-0" />
               </Link>
 
               <Link
                 to="/horarios"
-                className="flex items-center justify-between p-3.5 rounded-xl bg-slate-950/80 hover:bg-emerald-500/10 border border-slate-800 hover:border-emerald-500/30 transition-all group"
+                className="flex items-center justify-between p-3.5 rounded-xl bg-zinc-50 hover:bg-emerald-50 border border-zinc-200 hover:border-emerald-200 transition-all group shadow-sm"
               >
                 <div>
-                  <p className="text-sm font-semibold text-white group-hover:text-emerald-300">
+                  <p className="text-sm font-bold text-zinc-800 group-hover:text-emerald-700">
                     Horario de Clases
                   </p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-zinc-500 font-medium">
                     Distribución semanal de asignaturas
                   </p>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-400 shrink-0" />
+                <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:text-emerald-600 shrink-0" />
               </Link>
 
               <Link
                 to="/lince-hub"
-                className="flex items-center justify-between p-3.5 rounded-xl bg-slate-950/80 hover:bg-emerald-500/10 border border-slate-800 hover:border-emerald-500/30 transition-all group"
+                className="flex items-center justify-between p-3.5 rounded-xl bg-zinc-50 hover:bg-emerald-50 border border-zinc-200 hover:border-emerald-200 transition-all group shadow-sm"
               >
                 <div>
-                  <p className="text-sm font-semibold text-white group-hover:text-emerald-300">
+                  <p className="text-sm font-bold text-zinc-800 group-hover:text-emerald-700">
                     Comunidad / Asesorías
                   </p>
-                  <p className="text-xs text-slate-400">
-                    Apoyo académico y recursos estudiantiles
+                  <p className="text-xs text-zinc-500 font-medium">
+                    Apoyo académico y recursos
                   </p>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-400 shrink-0" />
+                <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:text-emerald-600 shrink-0" />
               </Link>
             </div>
           </div>

@@ -1,9 +1,6 @@
 // ============================================================================
-// CASCARÓN SUPABASE EDGE FUNCTION — PUNTO 5 (TAREA DEL INTEGRANTE 2)
+// SUPABASE EDGE FUNCTION — ASESOR ACADÉMICO
 // Ruta: supabase/functions/academic-advisor/index.ts
-// Descripción: Edge Function lista para que el Integrante 2 implemente lógica
-// serverless adicional (ej. Asesor Académico IA / LinceHub Analytics) sin
-// conflictos de merge con el Integrante 1.
 // ============================================================================
 
 // Declaración mínima de tipos para evitar errores si no se ejecuta en runtime Deno local
@@ -15,54 +12,123 @@ declare const Deno: {
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "http://localhost:5173",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
   "X-Content-Type-Options": "nosniff",
 };
 
+type JsonRecord = Record<string, unknown>;
+
+function asRecord(value: unknown): JsonRecord {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as JsonRecord)
+    : {};
+}
+
+function asFiniteNumber(value: unknown): number {
+  const number = Number(value || 0);
+  return Number.isFinite(number) ? number : 0;
+}
+
 Deno.serve(async (req: Request): Promise<Response> => {
-  // Manejo de preflight CORS
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  try {
-    // TODO (Integrante 2):
-    // 1. Extraer datos académicos enviados desde el frontend o backend (/api/extra)
-    // 2. Conectar con Supabase / Modelo de recomendación para calcular sugerencias
-    //    de carga académica, prioridades de tutoría o proyección de créditos.
-    const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
-
-    const responsePayload = {
-      ok: true,
-      module: "academic-advisor-edge-function",
-      status: "placeholder_ready",
-      message:
-        "Cascarón de Supabase Edge Function activo. Listo para la implementación del Integrante 2 (Punto 5).",
-      receivedInput: Boolean(body && Object.keys(body).length > 0),
-      timestamp: new Date().toISOString(),
-    };
-
-    return new Response(JSON.stringify(responsePayload), {
-      status: 200,
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "application/json",
-      },
-    });
-  } catch (_error) {
+  if (req.method !== "POST") {
     return new Response(
-      JSON.stringify({
-        ok: false,
-        message: "Error interno al procesar la solicitud en la Edge Function.",
-      }),
+      JSON.stringify({ error: "Método no permitido. Usa POST." }),
       {
-        status: 500,
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json",
-        },
-      }
+        status: 405,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
     );
   }
-});
 
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return new Response(
+      JSON.stringify({ error: "El cuerpo de la solicitud debe ser JSON válido." }),
+      {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
+  }
+
+  const input = asRecord(body);
+  const kardex = Array.isArray(input.kardex) ? input.kardex : [];
+  const calificaciones = Array.isArray(input.calificaciones)
+    ? input.calificaciones
+    : [];
+  const materiasEnRiesgo: Array<{
+    materia: unknown;
+    clave: unknown;
+    unidadesReprobadas: number;
+    nivelRiesgo: "Crítico" | "Preventivo";
+    recomendacion: string;
+  }> = [];
+  let creditosAprobados = 0;
+
+  for (const entry of kardex) {
+    const materia = asRecord(entry);
+    const calificacion = materia.calificacion;
+    if (calificacion === "AC" || Number(calificacion) >= 70) {
+      creditosAprobados += asFiniteNumber(materia.creditos);
+    }
+  }
+
+  for (const entry of calificaciones) {
+    const item = asRecord(entry);
+    const materia = asRecord(item.materia);
+    const notas = Array.isArray(item.calificaiones)
+      ? item.calificaiones
+      : Array.isArray(item.calificaciones)
+        ? item.calificaciones
+        : [];
+    let reprobadas = 0;
+
+    for (const entryNota of notas) {
+      const nota = asRecord(entryNota);
+      const calificacion = nota.calificacion;
+      if (
+        calificacion !== null &&
+        calificacion !== undefined &&
+        calificacion !== "" &&
+        Number(calificacion) < 70
+      ) {
+        reprobadas++;
+      }
+    }
+
+    if (reprobadas > 0) {
+      materiasEnRiesgo.push({
+        materia: materia.nombre_materia ?? null,
+        clave: materia.clave_materia ?? null,
+        unidadesReprobadas: reprobadas,
+        nivelRiesgo: reprobadas > 2 ? "Crítico" : "Preventivo",
+        recomendacion: "Se sugiere inscripción inmediata a LinceHub Asesorías.",
+      });
+    }
+  }
+
+  const diagnostico = {
+    timestamp: new Date().toISOString(),
+    estadoGeneral: materiasEnRiesgo.length > 0 ? "Alerta Académica" : "Óptimo",
+    materiasEnRiesgo,
+    creditosAprobados,
+    mensaje:
+      materiasEnRiesgo.length > 0
+        ? `Tienes ${materiasEnRiesgo.length} materia(s) en riesgo de segunda oportunidad.`
+        : "¡Excelente desempeño! No tienes unidades reprobadas actualmente.",
+  };
+
+  return new Response(JSON.stringify(diagnostico), {
+    status: 200,
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "application/json",
+    },
+  });
+});

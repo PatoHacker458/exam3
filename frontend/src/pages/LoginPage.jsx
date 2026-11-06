@@ -83,38 +83,35 @@ export default function LoginPage() {
   const activeAlert = errorMessage || sessionAlert;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center relative overflow-hidden px-4 py-12">
-      <div className="pointer-events-none absolute -top-40 -left-40 w-96 h-96 rounded-full bg-emerald-500/10 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-40 -right-40 w-96 h-96 rounded-full bg-teal-500/10 blur-3xl" />
-
+    <div className="min-h-screen bg-[#e6e6e6] text-zinc-900 flex flex-col justify-center relative overflow-hidden px-4 py-12">
       <div className="max-w-md w-full mx-auto relative z-10">
         {/* Encabezado Institucional */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 shadow-xl shadow-emerald-950/60 border border-emerald-400/30 mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-700 shadow-sm border border-emerald-800 mb-4">
             <GraduationCap className="w-9 h-9 text-white" />
           </div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-emerald-400 mb-1">
+          <p className="text-xs font-bold uppercase tracking-widest text-emerald-800 mb-1">
             Tecnológico Nacional de México en Celaya
           </p>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-zinc-900">
             Sistema Integral de Información
           </h1>
-          <p className="text-sm text-slate-400 mt-1.5">
+          <p className="text-sm text-zinc-600 font-medium mt-1.5">
             Acceso al portal académico para estudiantes
           </p>
         </div>
 
         {/* Tarjeta del Formulario */}
-        <div className="rounded-2xl bg-slate-900/90 border border-slate-800 shadow-2xl p-6 sm:p-8 backdrop-blur-xl">
+        <div className="rounded-2xl bg-white border border-zinc-300 shadow-sm p-6 sm:p-8">
           {activeAlert && (
             <div
               role="alert"
-              className="mb-6 rounded-xl bg-rose-500/10 border border-rose-500/30 p-4 flex items-start gap-3 text-rose-200 text-sm"
+              className="mb-6 rounded-xl bg-rose-50 border border-rose-300 p-4 flex items-start gap-3 text-rose-900 text-sm shadow-sm"
             >
-              <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+              <AlertCircle className="w-5 h-5 text-rose-700 shrink-0 mt-0.5" />
               <div className="flex-1">
-                <p className="font-semibold text-rose-300">Acceso no completado</p>
-                <p className="text-rose-200/90 mt-0.5 leading-relaxed">{activeAlert}</p>
+                <p className="font-bold text-rose-800">Acceso no completado</p>
+                <p className="text-rose-700 mt-0.5 leading-relaxed font-medium">{activeAlert}</p>
               </div>
             </div>
           )}
@@ -123,12 +120,12 @@ export default function LoginPage() {
             <div>
               <label
                 htmlFor="email"
-                className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2"
+                className="block text-xs font-bold uppercase tracking-wider text-zinc-700 mb-2"
               >
                 Correo Institucional
               </label>
               <div className="relative">
-                <Mail className="w-5 h-5 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <Mail className="w-5 h-5 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   id="email"
                   name="email"
@@ -141,7 +138,7 @@ export default function LoginPage() {
                     if (errorMessage) setErrorMessage('');
                   }}
                   disabled={isSubmitting}
-                  className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all disabled:opacity-60"
+                  className="w-full pl-11 pr-4 py-3 rounded-xl bg-zinc-50 border border-zinc-300 text-zinc-900 placeholder-zinc-500 font-medium text-sm focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20 transition-all disabled:opacity-60"
                 />
               </div>
             </div>
@@ -149,12 +146,12 @@ export default function LoginPage() {
             <div>
               <label
                 htmlFor="password"
-                className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2"
+                className="block text-xs font-bold uppercase tracking-wider text-zinc-700 mb-2"
               >
                 Contraseña
               </label>
               <div className="relative">
-                <Lock className="w-5 h-5 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <Lock className="w-5 h-5 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   id="password"
                   name="password"
@@ -167,12 +164,12 @@ export default function LoginPage() {
                     if (errorMessage) setErrorMessage('');
                   }}
                   disabled={isSubmitting}
-                  className="w-full pl-11 pr-11 py-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all disabled:opacity-60"
+                  className="w-full pl-11 pr-11 py-3 rounded-xl bg-zinc-50 border border-zinc-300 text-zinc-900 placeholder-zinc-500 font-medium text-sm focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20 transition-all disabled:opacity-60"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-200 cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-zinc-500 hover:text-zinc-700 cursor-pointer transition-colors"
                   aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                 >
                   {showPassword ? (
@@ -187,7 +184,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-sm shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full py-3 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <>
@@ -203,8 +200,8 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 pt-5 border-t border-slate-800/80 text-center text-xs text-slate-400">
-            Ingresa con tu cuenta oficial <span className="text-slate-300 font-mono">@celaya.tecnm.mx</span>
+          <div className="mt-6 pt-5 border-t border-zinc-200 text-center text-xs text-zinc-600 font-medium">
+            Ingresa con tu cuenta oficial <span className="text-zinc-800 font-mono font-bold">@celaya.tecnm.mx</span>
           </div>
         </div>
       </div>

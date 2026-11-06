@@ -13,15 +13,31 @@ import ExtraFeaturePage from './pages/ExtraFeaturePage.jsx';
 /**
  * Layout principal adaptado para pantallas estándar y monitores Ultrawide (21:9 / 32:9).
  */
-function ProtectedLayout({ children }) {
+function ProtectedLayout({ children, theme = 'light' }) {
+  const isLight = theme === 'light';
+
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-        <Navbar />
-        <main className="flex-1 w-full max-w-[1920px] mx-auto px-4 sm:px-8 lg:px-12 2xl:px-20 py-6 sm:py-8">
+      <div
+        className={`min-h-screen flex flex-col ${
+          isLight ? 'bg-zinc-200 text-zinc-900' : 'bg-slate-950 text-slate-100'
+        }`}
+      >
+        <Navbar theme={theme} />
+        <main
+          className={`flex-1 w-full max-w-[1920px] mx-auto px-4 sm:px-8 lg:px-12 2xl:px-20 py-6 sm:py-8 ${
+            isLight ? 'bg-zinc-200 text-zinc-900' : ''
+          }`}
+        >
           {children}
         </main>
-        <footer className="border-t border-slate-900 py-4 text-center text-xs text-slate-500 px-4">
+        <footer
+          className={`border-t py-4 text-center text-xs px-4 ${
+            isLight
+              ? 'border-zinc-300 text-zinc-600'
+              : 'border-slate-900 text-slate-500'
+          }`}
+        >
           Sistema Integral de Información · Tecnológico Nacional de México en Celaya
         </footer>
       </div>
@@ -77,7 +93,7 @@ export default function App() {
       <Route
         path="/lince-hub"
         element={
-          <ProtectedLayout>
+          <ProtectedLayout theme="light">
             <ExtraFeaturePage />
           </ProtectedLayout>
         }
