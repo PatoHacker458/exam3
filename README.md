@@ -144,10 +144,35 @@ El repositorio incluye el archivo Blueprint [`render.yaml`](./render.yaml) para 
 
 ## 6. Capturas de Pantalla del Funcionamiento
 
-> *(Espacio reservado para insertar las capturas de pantalla de la demostración en vivo con credenciales reales del SII ITC antes de la entrega final)*
->
 > - **1. Inicio de Sesión Institucional (`/login`)**: Validación de campos, manejo de errores y obtención de JWT.
+<img width="1279" height="652" alt="image" src="https://github.com/user-attachments/assets/db9fa934-0b71-4be5-aa38-2843144e2e61" />
+
 > - **2. Dashboard del Estudiante (`/dashboard`)**: Perfil institucional, tarjetas KPI, avance de créditos y skeleton loader.
+<img width="1694" height="945" alt="image" src="https://github.com/user-attachments/assets/f4d53dbf-cb17-40f2-9189-b5dac7acab88" />
+<img width="1635" height="918" alt="image" src="https://github.com/user-attachments/assets/5c54fc23-2d3d-434f-8d57-b5ac36c6b54c" />
+
 > - **3. Calificaciones (`/calificaciones`)**: Filtrado en tiempo real por materia/periodo y semáforo de desempeño (Verde / Amarillo / Rojo).
+<img width="1625" height="951" alt="image" src="https://github.com/user-attachments/assets/ca5e257f-4a71-4fcd-ae2b-30c591da9546" />
+
 > - **4. Kardex y Horario (`/kardex`, `/horarios`)**: Historial académico y agenda semanal.
+<img width="1633" height="918" alt="image" src="https://github.com/user-attachments/assets/56b2856e-9a49-4410-8fd2-09d7562d63e7" />
+<img width="1650" height="942" alt="image" src="https://github.com/user-attachments/assets/66b9e3ee-75df-4d4b-b2af-2e65d73297bd" />
+<img width="1658" height="938" alt="image" src="https://github.com/user-attachments/assets/f6d82230-2fa5-4951-9b49-2da68bd0340e" />
+<img width="1674" height="744" alt="image" src="https://github.com/user-attachments/assets/9efb57f3-0416-473b-822c-54b0ded2da83" />
+
+
+
+
 > - **5. LinceHub (`/lince-hub`)**: Funcionalidad adicional estudiantil.
+<img width="1661" height="939" alt="image" src="https://github.com/user-attachments/assets/cefe9c3c-29ba-4e29-b7b0-f4f88dfd8cb2" />
+<img width="1668" height="672" alt="image" src="https://github.com/user-attachments/assets/3072a196-edab-468d-afb1-b6ad4895ffad" />
+<img width="1616" height="878" alt="image" src="https://github.com/user-attachments/assets/5bb26fbe-c6bc-4367-ac6a-1b07e81d7b07" />
+<img width="1517" height="613" alt="image" src="https://github.com/user-attachments/assets/12f68dc9-2a76-4a98-aab3-7dcd12098da8" />
+<img width="1614" height="922" alt="image" src="https://github.com/user-attachments/assets/16da814a-48ed-4816-b77d-d438557a5c12" />
+<img width="1639" height="719" alt="image" src="https://github.com/user-attachments/assets/03cf42bc-d75b-437a-8007-da28266e801a" />
+
+
+
+
+
+
