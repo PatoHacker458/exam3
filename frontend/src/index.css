@@ -8,8 +8,8 @@
 
   body {
     min-height: 100vh;
-    background-color: #020617;
-    color: #f1f5f9;
+    background-color: #e6e6e6;
+    color: #18181b;
   }
 }
 
@@ -20,15 +20,14 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: #e4e4e7;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #a1a1aa;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #10b981;
 }
-

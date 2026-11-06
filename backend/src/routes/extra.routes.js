@@ -40,6 +40,114 @@ function getAlumnoId(req) {
   );
 }
 
+function normalizeAsesoriaData(body) {
+  const dias = Array.isArray(body.dias)
+    ? body.dias
+    : typeof body.dias === 'string'
+      ? body.dias.split(',')
+      : [];
+  const diasNormalizados = dias
+    .filter((dia) => typeof dia === 'string')
+    .map((dia) => dia.trim())
+    .filter(Boolean);
+  const horaInicio = body.hora_inicio;
+  const horaFin = body.hora_fin;
+  const cupoMaximo = Number(body.cupo_maximo);
+  const validDays = new Set([
+    'lunes',
+    'martes',
+    'miércoles',
+    'jueves',
+    'viernes',
+    'sábado',
+  ]);
+  const uniqueDays = new Set(
+    diasNormalizados.map((dia) => dia.toLocaleLowerCase('es')),
+  );
+  const validTime = (time) =>
+    typeof time === 'string' &&
+    /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time);
+
+  if (
+    typeof body.materia !== 'string' ||
+    !body.materia.trim() ||
+    typeof body.mentor !== 'string' ||
+    !body.mentor.trim() ||
+    typeof body.modalidad !== 'string' ||
+    !body.modalidad.trim() ||
+    typeof body.salon !== 'string' ||
+    !body.salon.trim() ||
+    diasNormalizados.length === 0 ||
+    diasNormalizados.some((dia) => !validDays.has(dia.toLocaleLowerCase('es'))) ||
+    uniqueDays.size !== diasNormalizados.length ||
+    !validTime(horaInicio) ||
+    !validTime(horaFin) ||
+    horaInicio >= horaFin ||
+    !Number.isInteger(cupoMaximo) ||
+    cupoMaximo < 1
+  ) {
+    return null;
+  }
+
+  const diasStr = diasNormalizados.join(',');
+  return {
+    materia: body.materia.trim(),
+    mentor: body.mentor.trim(),
+    modalidad: body.modalidad.trim(),
+    salon: body.salon.trim(),
+    dias: diasStr,
+    hora_inicio: horaInicio,
+    hora_fin: horaFin,
+    horario: `${diasNormalizados.join(', ')} · ${horaInicio} a ${horaFin} hrs`,
+    cupo_maximo: cupoMaximo,
+  };
+}
+
+function haySolapamiento(asesoria1, asesoria2) {
+  if (
+    !asesoria1?.dias ||
+    !asesoria2?.dias ||
+    !asesoria1.hora_inicio ||
+    !asesoria2.hora_inicio ||
+    !asesoria1.hora_fin ||
+    !asesoria2.hora_fin
+  ) {
+    return false;
+  }
+
+  const parseDays = (dias) =>
+    (Array.isArray(dias) ? dias : String(dias).split(','))
+      .map((dia) =>
+        dia
+          .trim()
+          .toLocaleLowerCase('es')
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, ''),
+      )
+      .filter(Boolean);
+  const dias1 = parseDays(asesoria1.dias);
+  const dias2 = parseDays(asesoria2.dias);
+
+  if (!dias1.some((dia) => dias2.includes(dia))) return false;
+
+  const toMinutes = (time) => {
+    if (typeof time !== 'string' || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time)) {
+      return null;
+    }
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+  const start1 = toMinutes(asesoria1.hora_inicio);
+  const end1 = toMinutes(asesoria1.hora_fin);
+  const start2 = toMinutes(asesoria2.hora_inicio);
+  const end2 = toMinutes(asesoria2.hora_fin);
+
+  if ([start1, end1, start2, end2].some((time) => time === null)) {
+    return false;
+  }
+  return start1 < end2 && start2 < end1;
+}
+
 function getAssessment(calificaciones, kardex) {
   const materiasEnRiesgo = [];
   let creditosAprobados = 0;
@@ -185,26 +293,16 @@ router.post('/asesorias', authMiddleware, async (req, res) => {
     req.body && typeof req.body === 'object' && !Array.isArray(req.body)
       ? req.body
       : {};
-  const cupoMaximo = Number(body.cupo_maximo);
-
-  if (
-    typeof body.materia !== 'string' ||
-    !body.materia.trim() ||
-    typeof body.mentor !== 'string' ||
-    !body.mentor.trim() ||
-    !Number.isInteger(cupoMaximo) ||
-    cupoMaximo < 1
-  ) {
+  const asesoriaData = normalizeAsesoriaData(body);
+  if (!asesoriaData) {
     return res.status(400).json({
-      error: 'Materia, mentor y un cupo_maximo entero mayor que cero son requeridos.',
+      error:
+        'Proporciona materia, mentor, modalidad, salón, días válidos, un horario correcto y un cupo máximo entero mayor que cero.',
     });
   }
 
-  const asesoriaData = { ...body };
-  delete asesoriaData.id;
   const nueva = {
     ...asesoriaData,
-    cupo_maximo: cupoMaximo,
     cupo_ocupado: 0,
     estado: 'Pendiente',
   };
@@ -271,6 +369,84 @@ router.patch('/asesorias/:id/estado', authMiddleware, async (req, res) => {
   return res.json({ data: asesoriasMemoria[index], source: 'memory' });
 });
 
+router.put('/asesorias/:id', authMiddleware, async (req, res) => {
+  const updatedFields = normalizeAsesoriaData(req.body || {});
+  if (!updatedFields) {
+    return res.status(400).json({
+      error:
+        'Proporciona materia, mentor, modalidad, salón, días válidos, un horario correcto y un cupo máximo entero mayor que cero.',
+    });
+  }
+
+  if (supabase) {
+    try {
+      const { data: current, error: readError } = await supabase
+        .from('asesorias_itc')
+        .select('cupo_ocupado')
+        .eq('id', req.params.id)
+        .maybeSingle();
+
+      if (readError) {
+        warnSupabaseFallback('consultar asesoría para actualizar', readError);
+        return res.status(500).json({
+          error: 'No fue posible consultar la asesoría en Supabase.',
+        });
+      }
+      if (!current) {
+        return res.status(404).json({ error: 'Asesoría no encontrada.' });
+      }
+      if (updatedFields.cupo_maximo < Number(current.cupo_ocupado || 0)) {
+        return res.status(400).json({
+          error: 'El cupo máximo no puede ser menor al número de inscritos.',
+        });
+      }
+
+      const { data, error } = await supabase
+        .from('asesorias_itc')
+        .update(updatedFields)
+        .eq('id', req.params.id)
+        .select()
+        .maybeSingle();
+
+      if (error) {
+        warnSupabaseFallback('actualizar asesoría', error);
+        return res.status(500).json({
+          error: 'No fue posible actualizar la asesoría en Supabase.',
+        });
+      }
+      if (!data) {
+        return res.status(404).json({ error: 'Asesoría no encontrada.' });
+      }
+
+      const index = findMemorySession(req.params.id);
+      if (index >= 0) asesoriasMemoria[index] = data;
+      else asesoriasMemoria.unshift(data);
+      return res.json({ data, source: 'supabase' });
+    } catch (error) {
+      warnSupabaseFallback('actualizar asesoría', error);
+      return res.status(500).json({
+        error: 'No fue posible actualizar la asesoría en Supabase.',
+      });
+    }
+  }
+
+  const index = findMemorySession(req.params.id);
+  if (index < 0) {
+    return res.status(404).json({ error: 'Asesoría no encontrada.' });
+  }
+  if (
+    updatedFields.cupo_maximo <
+    Number(asesoriasMemoria[index].cupo_ocupado || 0)
+  ) {
+    return res.status(400).json({
+      error: 'El cupo máximo no puede ser menor al número de inscritos.',
+    });
+  }
+
+  asesoriasMemoria[index] = { ...asesoriasMemoria[index], ...updatedFields };
+  return res.json({ data: asesoriasMemoria[index], source: 'memory' });
+});
+
 router.delete('/asesorias/:id', authMiddleware, async (req, res) => {
   if (supabase) {
     try {
@@ -326,75 +502,115 @@ router.post('/inscribir/:id', authMiddleware, async (req, res) => {
 
       if (existingError) {
         warnSupabaseFallback('verificar inscripción existente', existingError);
-      } else if (existente) {
+        return res.status(500).json({
+          error: 'No fue posible verificar la inscripción en Supabase.',
+        });
+      }
+      if (existente) {
         return res.status(400).json({
           error: 'Ya estás inscrito en esta asesoría.',
         });
       }
 
-      const { data: current, error: readError } = await supabase
+      const { data: nuevaAsesoria, error: advisoryError } = await supabase
         .from('asesorias_itc')
-        .select('id, cupo_maximo, cupo_ocupado')
+        .select('*')
         .eq('id', asesoriaId)
         .maybeSingle();
 
-      if (readError) {
-        warnSupabaseFallback('consultar cupo', readError);
-      } else if (!current) {
-        return res.status(404).json({ error: 'Asesoría no encontrada.' });
-      } else if (Number(current.cupo_ocupado) >= Number(current.cupo_maximo)) {
-        return res.status(409).json({ error: 'La asesoría ya no tiene cupo disponible.' });
-      } else {
-        const memoryIndex = findMemorySession(asesoriaId);
-        const currentMemory = {
-          ...(memoryIndex >= 0 ? asesoriasMemoria[memoryIndex] : {}),
-          ...current,
-        };
-        if (memoryIndex >= 0) asesoriasMemoria[memoryIndex] = currentMemory;
-        else asesoriasMemoria.unshift(currentMemory);
-
-        const { error: insertError } = await supabase
-          .from('solicitudes_asesoria')
-          .insert([{ asesoria_id: asesoriaId, alumno_id: alumnoId }]);
-
-        if (insertError) {
-          if (insertError.code === '23505') {
-            return res.status(400).json({
-              error: 'Ya estás inscrito en esta asesoría.',
-            });
-          }
-          warnSupabaseFallback('registrar solicitud', insertError);
-        } else {
-          const { data, error } = await supabase
-            .from('asesorias_itc')
-            .update({ cupo_ocupado: Number(current.cupo_ocupado) + 1 })
-            .eq('id', asesoriaId)
-            .select()
-            .single();
-
-          if (error) {
-            warnSupabaseFallback('actualizar cupo de inscripción', error);
-            const { error: rollbackError } = await supabase
-              .from('solicitudes_asesoria')
-              .delete()
-              .eq('asesoria_id', asesoriaId)
-              .eq('alumno_id', alumnoId);
-            if (rollbackError) {
-              warnSupabaseFallback('revertir solicitud incompleta', rollbackError);
-            }
-            return res.status(500).json({
-              error: 'No se pudo completar la inscripción en Supabase.',
-            });
-          } else {
-            const index = findMemorySession(asesoriaId);
-            if (index >= 0) asesoriasMemoria[index] = data;
-            else asesoriasMemoria.unshift(data);
-            return res.json({ success: true, data, source: 'supabase' });
-          }
-        }
+      if (advisoryError) {
+        warnSupabaseFallback('consultar asesoría para inscripción', advisoryError);
+        return res.status(500).json({
+          error: 'No fue posible consultar la asesoría en Supabase.',
+        });
       }
+      if (!nuevaAsesoria) {
+        return res.status(404).json({ error: 'Asesoría no encontrada.' });
+      }
+
+      const { data: misSolicitudes, error: enrollmentsError } = await supabase
+        .from('solicitudes_asesoria')
+        .select('*, asesorias_itc(*)')
+        .eq('alumno_id', alumnoId);
+
+      if (enrollmentsError) {
+        warnSupabaseFallback('consultar asesorías inscritas', enrollmentsError);
+        return res.status(500).json({
+          error: 'No fue posible verificar los horarios de tus asesorías.',
+        });
+      }
+
+      const misAsesorias = (misSolicitudes || [])
+        .map((solicitud) => solicitud.asesorias_itc)
+        .filter(Boolean);
+      const conflicto = misAsesorias.find(
+        (asesoria) => haySolapamiento(asesoria, nuevaAsesoria),
+      );
+
+      if (conflicto) {
+        return res.status(400).json({
+          error: `Conflicto de horario: Se empalma con "${conflicto.materia}" (${conflicto.horario}).`,
+        });
+      }
+
+      if (
+        Number(nuevaAsesoria.cupo_ocupado) >=
+        Number(nuevaAsesoria.cupo_maximo)
+      ) {
+        return res.status(409).json({
+          error: 'La asesoría ya no tiene cupo disponible.',
+        });
+      }
+
+      const { error: insertError } = await supabase
+        .from('solicitudes_asesoria')
+        .insert([{ asesoria_id: asesoriaId, alumno_id: alumnoId }]);
+
+      if (insertError) {
+        if (insertError.code === '23505') {
+          return res.status(400).json({
+            error: 'Ya estás inscrito en esta asesoría.',
+          });
+        }
+        warnSupabaseFallback('registrar solicitud', insertError);
+        return res.status(500).json({
+          error: 'Error al registrar en Supabase.',
+        });
+      }
+
+      const { data, error: updateError } = await supabase
+        .from('asesorias_itc')
+        .update({
+          cupo_ocupado: Number(nuevaAsesoria.cupo_ocupado || 0) + 1,
+        })
+        .eq('id', asesoriaId)
+        .select()
+        .single();
+
+      if (updateError) {
+        warnSupabaseFallback('actualizar cupo de inscripción', updateError);
+        const { error: rollbackError } = await supabase
+          .from('solicitudes_asesoria')
+          .delete()
+          .eq('asesoria_id', asesoriaId)
+          .eq('alumno_id', alumnoId);
+        if (rollbackError) {
+          warnSupabaseFallback('revertir solicitud incompleta', rollbackError);
+        }
+        return res.status(500).json({
+          error: 'No se pudo completar la inscripción en Supabase.',
+        });
+      }
+
+      const memoryIndex = findMemorySession(asesoriaId);
+      if (memoryIndex >= 0) asesoriasMemoria[memoryIndex] = data;
+      else asesoriasMemoria.unshift(data);
+      return res.json({ success: true, data, source: 'supabase' });
     } catch (error) {
       warnSupabaseFallback('inscribir estudiante', error);
+      return res.status(500).json({
+        error: 'No fue posible completar la inscripción en Supabase.',
+      });
     }
   }
 
@@ -402,6 +618,7 @@ router.post('/inscribir/:id', authMiddleware, async (req, res) => {
   if (index < 0) {
     return res.status(404).json({ error: 'Asesoría no encontrada.' });
   }
+
   const existente = solicitudesMemoria.find(
     (solicitud) =>
       solicitud.asesoria_id === asesoriaId &&
@@ -410,20 +627,44 @@ router.post('/inscribir/:id', authMiddleware, async (req, res) => {
   if (existente) {
     return res.status(400).json({ error: 'Ya estás inscrito en esta asesoría.' });
   }
-  const asesoria = asesoriasMemoria[index];
-  if (Number(asesoria.cupo_ocupado) >= Number(asesoria.cupo_maximo)) {
-    return res.status(409).json({ error: 'La asesoría ya no tiene cupo disponible.' });
+
+  const nuevaAsesoria = asesoriasMemoria[index];
+  const misAsesorias = solicitudesMemoria
+    .filter((solicitud) => solicitud.alumno_id === alumnoId)
+    .map((solicitud) =>
+      asesoriasMemoria.find(
+        (asesoria) => String(asesoria.id) === solicitud.asesoria_id,
+      ),
+    )
+    .filter(Boolean);
+  const conflicto = misAsesorias.find(
+    (asesoria) => haySolapamiento(asesoria, nuevaAsesoria),
+  );
+
+  if (conflicto) {
+    return res.status(400).json({
+      error: `Conflicto de horario: Se empalma con "${conflicto.materia}" (${conflicto.horario}).`,
+    });
   }
-  asesoriasMemoria[index] = {
-    ...asesoria,
-    cupo_ocupado: Number(asesoria.cupo_ocupado) + 1,
-  };
+
+  if (
+    Number(nuevaAsesoria.cupo_ocupado) >= Number(nuevaAsesoria.cupo_maximo)
+  ) {
+    return res.status(409).json({
+      error: 'La asesoría ya no tiene cupo disponible.',
+    });
+  }
+
   solicitudesMemoria.push({
     id: crypto.randomUUID(),
     asesoria_id: asesoriaId,
     alumno_id: alumnoId,
     fecha_solicitud: new Date().toISOString(),
   });
+  asesoriasMemoria[index] = {
+    ...nuevaAsesoria,
+    cupo_ocupado: Number(nuevaAsesoria.cupo_ocupado) + 1,
+  };
   return res.json({
     success: true,
     data: asesoriasMemoria[index],

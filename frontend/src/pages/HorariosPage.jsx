@@ -130,38 +130,38 @@ export default function HorariosPage() {
 
   if (loading) {
     return (
-      <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-10 2xl:px-16 py-8">
-        <Skeleton className="h-10 w-64 mb-8 bg-slate-800 rounded-lg" />
-        <Skeleton className="h-96 w-full bg-slate-800 rounded-xl" />
+      <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-10 2xl:px-16 py-8 min-h-screen bg-[#e6e6e6]">
+        <Skeleton className="h-10 w-64 mb-8 bg-zinc-300 rounded-lg" />
+        <Skeleton className="h-96 w-full bg-zinc-300 rounded-xl" />
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-10 2xl:px-16 py-8 text-slate-100">
+    <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-10 2xl:px-16 py-8 text-zinc-900 bg-[#e6e6e6] min-h-screen rounded-xl">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">
+          <h1 className="text-3xl font-bold text-zinc-900 tracking-tight">
             Horario de Clases
           </h1>
-          <p className="text-slate-400 mt-1 flex flex-wrap items-center gap-2">
-            <span className="text-blue-400 font-medium">{plan}</span>
-            <span className="text-slate-600 px-2" aria-hidden="true">
+          <p className="text-zinc-600 mt-1 flex flex-wrap items-center gap-2 font-medium">
+            <span className="text-emerald-700">{plan}</span>
+            <span className="text-zinc-400 px-2" aria-hidden="true">
               •
             </span>
             {period.descripcion_periodo || 'Periodo no disponible'}
             {period.clave_periodo ? ` (${period.clave_periodo})` : ''}
           </p>
         </div>
-        <div className="flex bg-slate-800 p-1 rounded-lg" aria-label="Vista del horario">
+        <div className="flex bg-zinc-200/80 p-1 rounded-lg border border-zinc-300 shadow-sm" aria-label="Vista del horario">
           <button
             type="button"
             onClick={() => setViewMode('agenda')}
             aria-pressed={viewMode === 'agenda'}
-            className={`px-4 py-2 rounded-md flex items-center gap-2 text-sm font-medium transition-colors ${
+            className={`px-4 py-2 rounded-md flex items-center gap-2 text-sm font-semibold transition-colors ${
               viewMode === 'agenda'
-                ? 'bg-slate-700 text-white'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-white text-zinc-900 shadow-sm border border-zinc-300'
+                : 'text-zinc-600 hover:text-zinc-900'
             }`}
           >
             <Calendar size={16} /> Agenda
@@ -170,10 +170,10 @@ export default function HorariosPage() {
             type="button"
             onClick={() => setViewMode('table')}
             aria-pressed={viewMode === 'table'}
-            className={`px-4 py-2 rounded-md flex items-center gap-2 text-sm font-medium transition-colors ${
+            className={`px-4 py-2 rounded-md flex items-center gap-2 text-sm font-semibold transition-colors ${
               viewMode === 'table'
-                ? 'bg-slate-700 text-white'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-white text-zinc-900 shadow-sm border border-zinc-300'
+                : 'text-zinc-600 hover:text-zinc-900'
             }`}
           >
             <Table2 size={16} /> Oficial
@@ -184,39 +184,39 @@ export default function HorariosPage() {
       {error && (
         <div
           role="alert"
-          className="mb-6 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300"
+          className="mb-6 rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700"
         >
           {error}
         </div>
       )}
 
       {!error && !hasSchedule ? (
-        <div className="rounded-xl border border-slate-800 bg-slate-900 p-8 text-center text-slate-400">
+        <div className="rounded-xl border border-zinc-300 bg-zinc-100 p-8 text-center text-zinc-600 font-medium shadow-sm">
           No hay horarios disponibles.
         </div>
       ) : (
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center gap-4 shadow-sm">
-              <div className="p-3 bg-blue-500/10 text-blue-500 rounded-lg">
+            <div className="bg-white border border-zinc-300 p-4 rounded-xl flex items-center gap-4 shadow-sm">
+              <div className="p-3 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg">
                 <Layers size={24} />
               </div>
               <div>
-                <p className="text-slate-400 text-xs font-medium uppercase tracking-wider">
+                <p className="text-zinc-500 text-xs font-bold uppercase tracking-wider">
                   Materias
                 </p>
-                <p className="text-2xl font-bold text-white">{classes.length}</p>
+                <p className="text-2xl font-bold text-zinc-900">{classes.length}</p>
               </div>
             </div>
-            <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center gap-4 shadow-sm">
-              <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-lg">
+            <div className="bg-white border border-zinc-300 p-4 rounded-xl flex items-center gap-4 shadow-sm">
+              <div className="p-3 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-lg">
                 <Clock size={24} />
               </div>
               <div>
-                <p className="text-slate-400 text-xs font-medium uppercase tracking-wider">
+                <p className="text-zinc-500 text-xs font-bold uppercase tracking-wider">
                   Horas / Sem
                 </p>
-                <p className="text-2xl font-bold text-white">
+                <p className="text-2xl font-bold text-zinc-900">
                   {Number.isInteger(totalWeeklyHours)
                     ? totalWeeklyHours
                     : totalWeeklyHours.toFixed(1)}
@@ -226,13 +226,13 @@ export default function HorariosPage() {
           </div>
 
           {viewMode === 'agenda' ? (
-            <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden overflow-x-auto shadow-sm">
+            <div className="bg-white border border-zinc-300 rounded-xl overflow-hidden overflow-x-auto shadow-sm">
               <table className="w-full min-w-[800px] border-collapse text-sm">
                 <thead>
                   <tr>
                     <th
                       scope="col"
-                      className="w-20 bg-slate-950 border-b border-r border-slate-800 p-4"
+                      className="w-20 bg-zinc-100/80 border-b border-r border-zinc-300 p-4 font-bold text-zinc-600"
                     >
                       Hora
                     </th>
@@ -240,10 +240,10 @@ export default function HorariosPage() {
                       <th
                         key={day}
                         scope="col"
-                        className={`p-4 border-b border-r border-slate-800 text-center font-semibold ${
+                        className={`p-4 border-b border-r border-zinc-300 text-center font-bold tracking-wide uppercase text-xs ${
                           today === day
-                            ? 'bg-blue-900/20 text-blue-400'
-                            : 'bg-slate-950 text-slate-300'
+                            ? 'bg-blue-50 text-blue-700'
+                            : 'bg-zinc-100/80 text-zinc-600'
                         }`}
                       >
                         {DAY_LABELS[day]}
@@ -256,7 +256,7 @@ export default function HorariosPage() {
                     <tr key={time}>
                       <th
                         scope="row"
-                        className="border-b border-r border-slate-800 bg-slate-950 text-slate-500 text-center py-3 font-mono text-xs font-normal"
+                        className="border-b border-r border-zinc-300 bg-zinc-50/50 text-zinc-500 text-center py-3 font-mono text-xs font-semibold"
                       >
                         {formatTime(time)}
                       </th>
@@ -280,31 +280,31 @@ export default function HorariosPage() {
                         return (
                           <td
                             key={`${day}-${time}`}
-                            className={`border-b border-r border-slate-800 p-1 relative h-16 ${
-                              today === day ? 'bg-blue-900/5' : ''
+                            className={`border-b border-r border-zinc-200 p-1 relative h-16 ${
+                              today === day ? 'bg-blue-50/30' : ''
                             }`}
                           >
                             {lesson && lessonSlot && (
                               <div
-                                className={`h-full rounded-md px-2 py-1 flex flex-col justify-center ${lesson.color} text-white shadow-sm overflow-hidden leading-tight`}
+                                className={`h-full rounded-md px-2 py-1 flex flex-col justify-center ${lesson.color} text-white shadow-sm overflow-hidden leading-tight border border-white/20`}
                               >
                                 {beginsHere && (
                                   <>
                                     <span className="font-bold text-xs truncate block">
                                       {lesson.nombre_materia || 'Materia'}
                                     </span>
-                                    <div className="flex justify-between items-center mt-1 text-[10px] opacity-90 gap-1">
+                                    <div className="flex justify-between items-center mt-1 text-[10px] opacity-90 gap-1 font-medium">
                                       <span className="flex items-center gap-1 truncate">
                                         <MapPin size={10} className="shrink-0" />
                                         {lessonSlot.room || 'Aula no indicada'}
                                       </span>
-                                      <span className="shrink-0">
+                                      <span className="shrink-0 font-bold">
                                         {lesson.letra_grupo
                                           ? `Gpo ${lesson.letra_grupo}`
                                           : ''}
                                       </span>
                                     </div>
-                                    <span className="text-[10px] opacity-80 mt-1">
+                                    <span className="text-[10px] opacity-80 mt-1 font-mono font-medium">
                                       {formatTime(lessonSlot.start)}–
                                       {formatTime(lessonSlot.end)}
                                     </span>
@@ -321,43 +321,43 @@ export default function HorariosPage() {
               </table>
             </div>
           ) : (
-            <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden overflow-x-auto shadow-sm">
+            <div className="bg-white border border-zinc-300 rounded-xl overflow-hidden overflow-x-auto shadow-sm">
               <table className="w-full text-left text-sm whitespace-nowrap">
-                <thead className="bg-slate-950 text-slate-400 border-b border-slate-800">
+                <thead className="bg-zinc-100/80 text-zinc-600 border-b border-zinc-300">
                   <tr>
-                    <th scope="col" className="px-6 py-4 font-medium">Clave</th>
-                    <th scope="col" className="px-6 py-4 font-medium">Materia</th>
-                    <th scope="col" className="px-4 py-4 font-medium text-center">
+                    <th scope="col" className="px-6 py-4 font-bold uppercase tracking-wider text-xs">Clave</th>
+                    <th scope="col" className="px-6 py-4 font-bold uppercase tracking-wider text-xs">Materia</th>
+                    <th scope="col" className="px-4 py-4 font-bold uppercase tracking-wider text-xs text-center">
                       Gpo
                     </th>
                     {DAYS.map((day) => (
                       <th
                         key={day}
                         scope="col"
-                        className="px-4 py-4 font-medium text-center"
+                        className="px-4 py-4 font-bold uppercase tracking-wider text-xs text-center"
                       >
                         {DAY_LABELS[day].slice(0, 3)}
                       </th>
                     ))}
-                    <th scope="col" className="px-6 py-4 font-medium text-center">
+                    <th scope="col" className="px-6 py-4 font-bold uppercase tracking-wider text-xs text-center">
                       Horas
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/50">
+                <tbody className="divide-y divide-zinc-200">
                   {classes.map((item) => (
                     <tr
                       key={item.key}
-                      className="hover:bg-slate-800/50 transition-colors"
+                      className="hover:bg-zinc-50 transition-colors"
                     >
-                      <td className="px-6 py-4 text-slate-400 font-mono text-xs">
+                      <td className="px-6 py-4 text-zinc-500 font-mono text-xs font-semibold">
                         {item.clave_materia || '—'}
                       </td>
-                      <td className="px-6 py-4 font-medium text-slate-200">
+                      <td className="px-6 py-4 font-bold text-zinc-900">
                         {item.nombre_materia || 'Materia sin nombre'}
                       </td>
                       <td className="px-4 py-4 text-center">
-                        <span className="bg-slate-800 text-slate-300 px-2 py-1 rounded text-xs">
+                        <span className="bg-zinc-100 border border-zinc-300 text-zinc-700 px-2 py-1 rounded text-xs font-bold">
                           {item.letra_grupo || '—'}
                         </span>
                       </td>
@@ -372,21 +372,21 @@ export default function HorariosPage() {
                           >
                             {lesson ? (
                               <div className="flex flex-col items-center">
-                                <span className="text-xs font-mono text-emerald-400">
+                                <span className="text-xs font-mono font-bold text-emerald-700">
                                   {formatTime(lesson.start)}–
                                   {formatTime(lesson.end)}
                                 </span>
-                                <span className="text-[10px] text-slate-500 mt-0.5">
+                                <span className="text-[10px] text-zinc-500 font-medium mt-0.5">
                                   {lesson.room || 'Aula no indicada'}
                                 </span>
                               </div>
                             ) : (
-                              <span className="text-slate-700">—</span>
+                              <span className="text-zinc-300 font-bold">—</span>
                             )}
                           </td>
                         );
                       })}
-                      <td className="px-6 py-4 text-center font-bold text-slate-400">
+                      <td className="px-6 py-4 text-center font-extrabold text-zinc-700">
                         {item.weeklyMinutes / 60}
                       </td>
                     </tr>

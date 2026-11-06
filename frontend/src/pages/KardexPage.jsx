@@ -18,12 +18,12 @@ const getNumber = (value) => {
 const getBadgeColor = (calificacion) => {
   const grade = getNumber(calificacion);
   if (calificacion === 'AC' || grade >= 85) {
-    return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
+    return 'bg-emerald-100 text-emerald-800 border-emerald-300';
   }
   if (grade !== null && grade >= 70) {
-    return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
+    return 'bg-amber-100 text-amber-800 border-amber-300';
   }
-  return 'bg-rose-500/10 text-rose-500 border-rose-500/20';
+  return 'bg-rose-100 text-rose-800 border-rose-300';
 };
 
 export default function KardexPage() {
@@ -153,44 +153,44 @@ export default function KardexPage() {
 
   if (loading) {
     return (
-      <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-10 2xl:px-16 py-8">
-        <Skeleton className="h-10 w-64 mb-8 bg-slate-800 rounded-lg" />
+      <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-10 2xl:px-16 py-8 min-h-screen bg-[#e6e6e6]">
+        <Skeleton className="h-10 w-64 mb-8 bg-zinc-300 rounded-lg" />
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
           {[1, 2, 3, 4].map((item) => (
             <Skeleton
               key={item}
-              className="h-32 w-full bg-slate-800 rounded-xl"
+              className="h-32 w-full bg-zinc-300 rounded-xl"
             />
           ))}
         </div>
-        <Skeleton className="h-96 w-full bg-slate-800 rounded-xl" />
+        <Skeleton className="h-96 w-full bg-zinc-300 rounded-xl" />
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-10 2xl:px-16 py-8 text-slate-100">
+    <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-10 2xl:px-16 py-8 text-zinc-900 bg-[#e6e6e6] min-h-screen rounded-xl">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">
+          <h1 className="text-3xl font-bold text-zinc-900 tracking-tight">
             Kardex Académico
           </h1>
-          <p className="text-slate-400 mt-1">
+          <p className="text-zinc-600 mt-1 font-medium">
             Historial completo y avance reticular
           </p>
         </div>
         <div
-          className="flex bg-slate-800 p-1 rounded-lg"
+          className="flex bg-zinc-200/80 p-1 rounded-lg border border-zinc-300 shadow-sm"
           aria-label="Modo de visualización"
         >
           <button
             type="button"
             onClick={() => setViewMode('grouped')}
             aria-pressed={viewMode === 'grouped'}
-            className={`px-4 py-2 rounded-md flex items-center gap-2 text-sm font-medium transition-colors ${
+            className={`px-4 py-2 rounded-md flex items-center gap-2 text-sm font-semibold transition-colors ${
               viewMode === 'grouped'
-                ? 'bg-slate-700 text-white'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-white text-zinc-900 shadow-sm border border-zinc-300'
+                : 'text-zinc-600 hover:text-zinc-900'
             }`}
           >
             <List size={16} /> Agrupado
@@ -199,10 +199,10 @@ export default function KardexPage() {
             type="button"
             onClick={() => setViewMode('table')}
             aria-pressed={viewMode === 'table'}
-            className={`px-4 py-2 rounded-md flex items-center gap-2 text-sm font-medium transition-colors ${
+            className={`px-4 py-2 rounded-md flex items-center gap-2 text-sm font-semibold transition-colors ${
               viewMode === 'table'
-                ? 'bg-slate-700 text-white'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-white text-zinc-900 shadow-sm border border-zinc-300'
+                : 'text-zinc-600 hover:text-zinc-900'
             }`}
           >
             <Table2 size={16} /> Tabla
@@ -213,23 +213,23 @@ export default function KardexPage() {
       {error && (
         <div
           role="alert"
-          className="mb-6 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300"
+          className="mb-6 rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700"
         >
           {error}
         </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-sm">
+        <div className="bg-white border border-zinc-300 p-6 rounded-xl shadow-sm">
           <div className="flex justify-between items-center mb-2">
-            <p className="text-slate-400 text-sm font-medium">Avance Reticular</p>
-            <CheckCircle className="text-emerald-500" size={20} />
+            <p className="text-zinc-500 text-sm font-bold uppercase tracking-wider">Avance Reticular</p>
+            <CheckCircle className="text-emerald-600" size={20} />
           </div>
-          <h3 className="text-3xl font-bold text-white mb-3">
+          <h3 className="text-3xl font-extrabold text-zinc-900 mb-3">
             {data.porcentaje}%
           </h3>
           <div
-            className="w-full bg-slate-800 rounded-full h-2"
+            className="w-full bg-zinc-200 rounded-full h-2 border border-zinc-300"
             role="progressbar"
             aria-label="Avance reticular"
             aria-valuemin={0}
@@ -237,56 +237,56 @@ export default function KardexPage() {
             aria-valuenow={Math.min(100, Math.max(0, data.porcentaje))}
           >
             <div
-              className="bg-emerald-500 h-2 rounded-full"
+              className="bg-emerald-500 h-full rounded-full"
               style={{
                 width: `${Math.min(100, Math.max(0, data.porcentaje))}%`,
               }}
             />
           </div>
         </div>
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-sm">
+        <div className="bg-white border border-zinc-300 p-6 rounded-xl shadow-sm">
           <div className="flex justify-between items-center mb-2">
-            <p className="text-slate-400 text-sm font-medium">Promedio General</p>
-            <BookOpen className="text-blue-500" size={20} />
+            <p className="text-zinc-500 text-sm font-bold uppercase tracking-wider">Promedio General</p>
+            <BookOpen className="text-blue-600" size={20} />
           </div>
-          <h3 className="text-3xl font-bold text-white">
+          <h3 className="text-3xl font-extrabold text-zinc-900 font-mono">
             {promGeneral.toFixed(2)}
           </h3>
-          <p className="text-xs text-slate-500 mt-1">
-            Prom. Aprobadas: {promAprobadas.toFixed(2)}
+          <p className="text-xs text-zinc-500 font-medium mt-1">
+            Prom. Aprobadas: <span className="font-bold text-zinc-700">{promAprobadas.toFixed(2)}</span>
           </p>
         </div>
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-sm">
+        <div className="bg-white border border-zinc-300 p-6 rounded-xl shadow-sm">
           <div className="flex justify-between items-center mb-2">
-            <p className="text-slate-400 text-sm font-medium">
+            <p className="text-zinc-500 text-sm font-bold uppercase tracking-wider">
               Créditos Acumulados
             </p>
-            <CheckCircle className="text-emerald-500" size={20} />
+            <CheckCircle className="text-purple-600" size={20} />
           </div>
-          <h3 className="text-3xl font-bold text-white">{totalCreditos}</h3>
+          <h3 className="text-3xl font-extrabold text-zinc-900">{totalCreditos}</h3>
         </div>
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-sm">
+        <div className="bg-white border border-zinc-300 p-6 rounded-xl shadow-sm">
           <div className="flex justify-between items-center mb-2">
-            <p className="text-slate-400 text-sm font-medium">
+            <p className="text-zinc-500 text-sm font-bold uppercase tracking-wider">
               Estado de Cursadas
             </p>
-            <AlertTriangle className="text-amber-500" size={20} />
+            <AlertTriangle className="text-amber-600" size={20} />
           </div>
-          <h3 className="text-3xl font-bold text-white">
+          <h3 className="text-3xl font-extrabold text-zinc-900">
             {data.kardex.length}{' '}
-            <span className="text-lg text-slate-500 font-normal">Totales</span>
+            <span className="text-lg text-zinc-500 font-bold">Totales</span>
           </h3>
-          <p className="text-xs text-slate-500 mt-1">
-            {repeticiones} cursadas en Repetición
+          <p className="text-xs text-zinc-500 font-medium mt-1">
+            <span className="font-bold text-zinc-700">{repeticiones}</span> cursadas en Repetición
           </p>
         </div>
       </div>
 
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="bg-white border border-zinc-300 rounded-xl p-4 mb-6 grid grid-cols-1 md:grid-cols-4 gap-4 shadow-sm">
         <label className="relative block">
           <span className="sr-only">Buscar materia o clave</span>
           <Search
-            className="absolute left-3 top-3 text-slate-500"
+            className="absolute left-3 top-3 text-zinc-400"
             size={18}
             aria-hidden="true"
           />
@@ -295,7 +295,7 @@ export default function KardexPage() {
             placeholder="Buscar materia o clave..."
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-950 text-slate-100 border border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            className="w-full pl-10 pr-4 py-2.5 bg-zinc-50 text-zinc-900 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-emerald-600 focus:outline-none transition-shadow"
           />
         </label>
         <label>
@@ -303,7 +303,7 @@ export default function KardexPage() {
           <select
             value={filterPeriod}
             onChange={(event) => setFilterPeriod(event.target.value)}
-            className="w-full px-4 py-2.5 bg-slate-950 text-slate-100 border border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            className="w-full px-4 py-2.5 bg-zinc-50 text-zinc-900 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-emerald-600 focus:outline-none cursor-pointer transition-shadow"
           >
             <option value="">Todos los Periodos</option>
             {uniquePeriods.map((periodo) => (
@@ -318,7 +318,7 @@ export default function KardexPage() {
           <select
             value={filterDesc}
             onChange={(event) => setFilterDesc(event.target.value)}
-            className="w-full px-4 py-2.5 bg-slate-950 text-slate-100 border border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            className="w-full px-4 py-2.5 bg-zinc-50 text-zinc-900 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-emerald-600 focus:outline-none cursor-pointer transition-shadow"
           >
             <option value="">Cualquier Modalidad</option>
             <option value="NORMAL / ORDINARIO">Ordinario</option>
@@ -328,63 +328,63 @@ export default function KardexPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-10 text-center text-slate-400">
+        <div className="bg-white border border-zinc-300 rounded-xl p-10 text-center text-zinc-500 font-medium shadow-sm">
           {data.kardex.length === 0
             ? 'No hay materias registradas en el kardex.'
             : 'No se encontraron materias con esos filtros.'}
         </div>
       ) : viewMode === 'table' ? (
-        <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden overflow-x-auto">
+        <div className="bg-white border border-zinc-300 rounded-xl overflow-hidden overflow-x-auto shadow-sm">
           <table className="w-full text-left text-sm whitespace-nowrap">
-            <thead className="bg-slate-950 text-slate-400 border-b border-slate-800">
+            <thead className="bg-zinc-100/80 text-zinc-600 border-b border-zinc-300">
               <tr>
-                <th scope="col" className="px-6 py-4 font-medium">Clave</th>
-                <th scope="col" className="px-6 py-4 font-medium">Materia</th>
-                <th scope="col" className="px-6 py-4 font-medium">Semestre</th>
-                <th scope="col" className="px-6 py-4 font-medium">Periodo</th>
-                <th scope="col" className="px-6 py-4 font-medium">Modalidad</th>
-                <th scope="col" className="px-6 py-4 font-medium text-right">Créditos</th>
-                <th scope="col" className="px-6 py-4 font-medium text-right">
+                <th scope="col" className="px-6 py-4 font-bold uppercase tracking-wider text-xs">Clave</th>
+                <th scope="col" className="px-6 py-4 font-bold uppercase tracking-wider text-xs">Materia</th>
+                <th scope="col" className="px-6 py-4 font-bold uppercase tracking-wider text-xs">Semestre</th>
+                <th scope="col" className="px-6 py-4 font-bold uppercase tracking-wider text-xs">Periodo</th>
+                <th scope="col" className="px-6 py-4 font-bold uppercase tracking-wider text-xs">Modalidad</th>
+                <th scope="col" className="px-6 py-4 font-bold uppercase tracking-wider text-xs text-right">Créditos</th>
+                <th scope="col" className="px-6 py-4 font-bold uppercase tracking-wider text-xs text-right">
                   Calificación
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/50">
+            <tbody className="divide-y divide-zinc-200">
               {filtered.map((item, index) => (
                 <tr
                   key={`${item.clave_materia ?? 'materia'}-${item.periodo ?? index}-${index}`}
-                  className="hover:bg-slate-800/50 transition-colors"
+                  className="hover:bg-zinc-50 transition-colors"
                 >
-                  <td className="px-6 py-4 text-slate-400 font-mono text-xs">
+                  <td className="px-6 py-4 text-zinc-500 font-mono text-xs font-semibold">
                     {item.clave_materia || '—'}
                   </td>
-                  <td className="px-6 py-4 font-medium text-slate-200">
+                  <td className="px-6 py-4 font-bold text-zinc-900">
                     {item.nombre_materia || 'Materia sin nombre'}
                   </td>
-                  <td className="px-6 py-4 text-slate-400">
+                  <td className="px-6 py-4 text-zinc-600 font-medium">
                     {item.semestre ?? '—'}
                   </td>
-                  <td className="px-6 py-4 text-slate-400">
+                  <td className="px-6 py-4 text-zinc-600 font-medium">
                     {item.periodo || '—'}
                   </td>
                   <td className="px-6 py-4">
                     {String(item.descripcion ?? '').includes('REPETICIÓN') ||
                     String(item.periodo ?? '').includes('V') ? (
-                      <span className="bg-amber-500/10 text-amber-500 px-2.5 py-1 rounded text-xs border border-amber-500/20">
+                      <span className="bg-amber-100 text-amber-800 px-2.5 py-1 rounded text-xs font-bold border border-amber-300">
                         {item.descripcion || 'Repetición'}
                       </span>
                     ) : (
-                      <span className="text-slate-400 text-xs">
+                      <span className="text-zinc-500 font-medium text-xs">
                         {item.descripcion || '—'}
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-right text-slate-400">
+                  <td className="px-6 py-4 text-right text-zinc-600 font-bold">
                     {item.creditos ?? '—'}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <span
-                      className={`px-2.5 py-1 rounded font-bold text-xs border ${getBadgeColor(item.calificacion)}`}
+                      className={`px-2.5 py-1 rounded font-bold text-xs border font-mono ${getBadgeColor(item.calificacion)}`}
                     >
                       {item.calificacion ?? '—'}
                     </span>
@@ -403,45 +403,45 @@ export default function KardexPage() {
             return (
               <section
                 key={semester}
-                className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden"
+                className="bg-white border border-zinc-300 rounded-xl overflow-hidden shadow-sm"
               >
-                <div className="bg-slate-950 px-6 py-4 border-b border-slate-800 flex justify-between items-center">
-                  <h3 className="text-lg font-bold text-white">
+                <div className="bg-zinc-100/80 px-6 py-4 border-b border-zinc-300 flex justify-between items-center">
+                  <h3 className="text-lg font-extrabold text-zinc-900">
                     Semestre {semester}
                   </h3>
-                  <span className="text-sm text-slate-400">
+                  <span className="text-sm font-bold text-zinc-500">
                     {materiasSemestre.length} materias
                   </span>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6 bg-zinc-50/50">
                   {materiasSemestre.map((item, index) => (
                     <article
                       key={`${item.clave_materia ?? 'materia'}-${item.periodo ?? index}-${index}`}
-                      className="border border-slate-800 bg-slate-900/50 p-4 rounded-lg flex flex-col justify-between hover:border-slate-700 transition-colors"
+                      className="border border-zinc-300 bg-white p-4 rounded-lg flex flex-col justify-between hover:border-emerald-300 hover:shadow-md transition-all duration-200"
                     >
                       <div>
                         <div className="flex justify-between items-start mb-2">
-                          <span className="text-xs font-mono text-slate-500 bg-slate-950 px-2 py-1 rounded">
+                          <span className="text-xs font-mono font-bold text-zinc-500 bg-zinc-100 border border-zinc-200 px-2 py-1 rounded">
                             {item.clave_materia || 'Sin clave'}
                           </span>
                           <span
-                            className={`px-2 py-1 rounded font-bold text-xs border ${getBadgeColor(item.calificacion)}`}
+                            className={`px-2 py-1 rounded font-bold text-xs border font-mono ${getBadgeColor(item.calificacion)}`}
                           >
                             {item.calificacion ?? '—'}
                           </span>
                         </div>
-                        <h4 className="font-medium text-slate-200 text-sm mb-1 leading-snug">
+                        <h4 className="font-bold text-zinc-900 text-sm mb-1 leading-snug">
                           {item.nombre_materia || 'Materia sin nombre'}
                         </h4>
                         {String(item.descripcion ?? '').includes('REPETICIÓN') && (
-                          <span className="text-[10px] uppercase text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded mt-1 inline-block">
+                          <span className="text-[10px] uppercase font-bold text-amber-800 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded mt-1 inline-block">
                             Repetición
                           </span>
                         )}
                       </div>
-                      <div className="flex justify-between items-end mt-4 pt-3 border-t border-slate-800/50 text-xs text-slate-500">
-                        <span>Periodo: {item.periodo || '—'}</span>
-                        <span>{item.creditos ?? '—'} Créditos</span>
+                      <div className="flex justify-between items-end mt-4 pt-3 border-t border-zinc-200 text-xs text-zinc-500 font-medium">
+                        <span>Periodo: <span className="font-bold text-zinc-700">{item.periodo || '—'}</span></span>
+                        <span><span className="font-bold text-zinc-700">{item.creditos ?? '—'}</span> Créditos</span>
                       </div>
                     </article>
                   ))}
@@ -453,11 +453,11 @@ export default function KardexPage() {
             (materia) =>
               materia.semestre === null || materia.semestre === undefined || materia.semestre === '',
           ) && (
-            <section className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-              <div className="bg-slate-950 px-6 py-4 border-b border-slate-800">
-                <h3 className="text-lg font-bold text-white">Sin semestre</h3>
+            <section className="bg-white border border-zinc-300 rounded-xl overflow-hidden shadow-sm">
+              <div className="bg-zinc-100/80 px-6 py-4 border-b border-zinc-300">
+                <h3 className="text-lg font-extrabold text-zinc-900">Sin semestre</h3>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6 bg-zinc-50/50">
                 {filtered
                   .filter(
                     (materia) =>
@@ -468,16 +468,16 @@ export default function KardexPage() {
                   .map((item, index) => (
                     <article
                       key={`${item.clave_materia ?? 'materia'}-${item.periodo ?? index}-${index}`}
-                      className="border border-slate-800 bg-slate-900/50 p-4 rounded-lg"
+                      className="border border-zinc-300 bg-white p-4 rounded-lg hover:border-emerald-300 hover:shadow-md transition-all duration-200"
                     >
-                      <p className="text-xs font-mono text-slate-500">
+                      <p className="text-xs font-mono font-bold text-zinc-500">
                         {item.clave_materia || 'Sin clave'}
                       </p>
-                      <h4 className="font-medium text-slate-200 text-sm mt-2">
+                      <h4 className="font-bold text-zinc-900 text-sm mt-2">
                         {item.nombre_materia || 'Materia sin nombre'}
                       </h4>
-                      <p className="text-xs text-slate-500 mt-3">
-                        Periodo: {item.periodo || '—'} · {item.creditos ?? '—'} Créditos
+                      <p className="text-xs text-zinc-500 font-medium mt-3">
+                        Periodo: <span className="font-bold text-zinc-700">{item.periodo || '—'}</span> · <span className="font-bold text-zinc-700">{item.creditos ?? '—'}</span> Créditos
                       </p>
                     </article>
                   ))}

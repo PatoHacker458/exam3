@@ -4,22 +4,36 @@ import {
   Bookmark,
   Calendar,
   CheckCircle2,
+  Clock,
+  Edit2,
   Info,
   Plus,
   Settings,
   Users,
+  X,
   XCircle,
 } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Skeleton from '../components/ui/Skeleton';
 
+const DIAS_OPCIONES = [
+  'Lunes',
+  'Martes',
+  'Miércoles',
+  'Jueves',
+  'Viernes',
+  'Sábado',
+];
+
 const INITIAL_FORM = {
   materia: '',
   mentor: '',
   modalidad: 'Presencial',
   salon: '',
-  horario: '',
+  dias: [],
+  hora_inicio: '14:00',
+  hora_fin: '16:00',
   cupo_maximo: 10,
 };
 
@@ -69,6 +83,7 @@ export default function ExtraFeaturePage() {
   const [diagnosticoError, setDiagnosticoError] = useState('');
   const [actionMessage, setActionMessage] = useState(null);
   const [busyAction, setBusyAction] = useState('');
+  const [editingId, setEditingId] = useState(null);
   const [newForm, setNewForm] = useState(INITIAL_FORM);
 
   const fetchData = useCallback(async (showLoading = false) => {
@@ -206,23 +221,79 @@ export default function ExtraFeaturePage() {
     );
   };
 
-  const handleCrear = async (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    if (newForm.dias.length === 0) {
+      setActionMessage({
+        type: 'error',
+        text: 'Selecciona al menos un día para la asesoría.',
+      });
+      return;
+    }
+    if (newForm.hora_inicio >= newForm.hora_fin) {
+      setActionMessage({
+        type: 'error',
+        text: 'La hora de fin debe ser posterior a la hora de inicio.',
+      });
+      return;
+    }
+
     await runAction(
-      'crear',
+      editingId ? `actualizar-${editingId}` : 'crear',
       async () => {
-        await api.post('/extra/asesorias', {
+        const asesoriaData = {
           ...newForm,
           materia: newForm.materia.trim(),
           mentor: newForm.mentor.trim(),
           salon: newForm.salon.trim(),
-          horario: newForm.horario.trim(),
           cupo_maximo: Number(newForm.cupo_maximo),
-        });
+        };
+        if (editingId) {
+          await api.put(`/extra/asesorias/${editingId}`, asesoriaData);
+        } else {
+          await api.post('/extra/asesorias', asesoriaData);
+        }
+        setEditingId(null);
         setNewForm(INITIAL_FORM);
       },
-      'Asesoría registrada. Quedó pendiente de aprobación.',
+      editingId
+        ? 'Asesoría actualizada correctamente.'
+        : 'Asesoría registrada. Quedó pendiente de aprobación.',
     );
+  };
+
+  const toggleDia = (dia) => {
+    setNewForm((current) => ({
+      ...current,
+      dias: current.dias.includes(dia)
+        ? current.dias.filter((selected) => selected !== dia)
+        : [...current.dias, dia],
+    }));
+  };
+
+  const handleEdit = (asesoria) => {
+    const storedDays = Array.isArray(asesoria.dias)
+      ? asesoria.dias
+      : typeof asesoria.dias === 'string'
+        ? asesoria.dias.split(',').map((dia) => dia.trim()).filter(Boolean)
+        : [];
+    setEditingId(asesoria.id);
+    setNewForm({
+      materia: asesoria.materia || '',
+      mentor: asesoria.mentor || '',
+      modalidad: asesoria.modalidad || 'Presencial',
+      salon: asesoria.salon || '',
+      dias: storedDays,
+      hora_inicio: asesoria.hora_inicio || '14:00',
+      hora_fin: asesoria.hora_fin || '16:00',
+      cupo_maximo: asesoria.cupo_maximo,
+    });
+    setActionMessage(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setNewForm(INITIAL_FORM);
   };
 
   const handleEstado = (asesoria) => {
@@ -234,18 +305,29 @@ export default function ExtraFeaturePage() {
     );
   };
 
-  const handleDelete = (asesoria) =>
-    runAction(
+  const handleDelete = (asesoria) => {
+    if (
+      !window.confirm(
+        '¿Eliminar definitivamente esta asesoría? Esta acción borrará a todos los inscritos.',
+      )
+    ) {
+      return;
+    }
+    return runAction(
       `eliminar-${asesoria.id}`,
-      () => api.delete(`/extra/asesorias/${asesoria.id}`),
+      async () => {
+        await api.delete(`/extra/asesorias/${asesoria.id}`);
+        if (String(editingId) === String(asesoria.id)) handleCancelEdit();
+      },
       'Asesoría eliminada.',
     );
+  };
 
   if (loading) {
     return (
-      <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-10 py-8">
-        <Skeleton className="h-10 w-64 mb-8 bg-slate-800 rounded-lg" />
-        <Skeleton className="h-96 w-full bg-slate-800 rounded-xl" />
+      <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-10 py-8 min-h-screen bg-[#e6e6e6]">
+        <Skeleton className="h-10 w-64 mb-8 bg-zinc-300 rounded-lg" />
+        <Skeleton className="h-96 w-full bg-zinc-300 rounded-xl" />
       </div>
     );
   }
@@ -261,12 +343,12 @@ export default function ExtraFeaturePage() {
   ];
 
   return (
-    <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-10 2xl:px-16 py-8 text-slate-100">
-      <div className="mb-8 border-b border-slate-800 pb-4">
-        <h1 className="text-3xl font-bold text-white tracking-tight">
+    <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-10 2xl:px-16 py-8 text-zinc-900 bg-[#e6e6e6] min-h-screen">
+      <div className="mb-8 border-b border-zinc-300 pb-4">
+        <h1 className="text-3xl font-bold text-zinc-900 tracking-tight">
           Centro de Asesorías y Seguimiento Académico
         </h1>
-        <p className="text-slate-400 mt-1">
+        <p className="text-zinc-600 mt-1">
           LinceHub: Conectando talento y previniendo la deserción
         </p>
       </div>
@@ -276,8 +358,8 @@ export default function ExtraFeaturePage() {
           role={actionMessage.type === 'error' ? 'alert' : 'status'}
           className={`mb-5 rounded-lg border px-4 py-3 text-sm ${
             actionMessage.type === 'error'
-              ? 'border-rose-500/30 bg-rose-500/10 text-rose-300'
-              : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+              ? 'border-rose-300 bg-rose-50 text-rose-700'
+              : 'border-emerald-300 bg-emerald-50 text-emerald-700'
           }`}
         >
           {actionMessage.text}
@@ -285,18 +367,12 @@ export default function ExtraFeaturePage() {
       )}
 
       <div
-        className="flex gap-2 mb-6 border-b border-slate-800 overflow-x-auto"
+        className="flex gap-2 mb-6 border-b border-zinc-300 overflow-x-auto"
         role="tablist"
         aria-label="Secciones de LinceHub"
       >
         {tabs.map(({ id, label, Icon }) => {
           const selected = activeTab === id;
-          const activeColor =
-            id === 'asesorias'
-              ? 'border-blue-500 text-blue-400'
-              : id === 'diagnostico'
-                ? 'border-emerald-500 text-emerald-400'
-                : 'border-amber-500 text-amber-400';
           return (
             <button
               key={id}
@@ -304,10 +380,10 @@ export default function ExtraFeaturePage() {
               role="tab"
               aria-selected={selected}
               onClick={() => setActiveTab(id)}
-              className={`px-5 py-3 font-medium text-sm flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
+              className={`px-5 py-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
                 selected
-                  ? activeColor
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
+                  ? 'border-emerald-700 text-emerald-800 bg-zinc-100 rounded-t-lg'
+                  : 'border-transparent text-zinc-600 hover:text-zinc-900'
               }`}
             >
               <Icon size={18} /> {label}
@@ -319,7 +395,7 @@ export default function ExtraFeaturePage() {
       {activeTab === 'asesorias' && (
         <>
           <div
-            className="flex w-max max-w-full gap-1 rounded-lg border border-slate-800 bg-slate-900 p-1 mb-6 overflow-x-auto"
+            className="flex w-max max-w-full gap-1 rounded-lg border border-zinc-300 bg-zinc-300/70 p-1 mb-6 overflow-x-auto"
             role="tablist"
             aria-label="Catálogo de asesorías"
           >
@@ -330,8 +406,8 @@ export default function ExtraFeaturePage() {
               onClick={() => setAsesoriasSubTab('explorar')}
               className={`px-4 py-2 flex items-center gap-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
                 asesoriasSubTab === 'explorar'
-                  ? 'bg-slate-800 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-zinc-100 text-zinc-900 shadow-sm border border-zinc-300'
+                  : 'text-zinc-600 hover:text-zinc-900'
               }`}
             >
               <Bookmark size={16} aria-hidden="true" /> Explorar Catálogo
@@ -343,18 +419,19 @@ export default function ExtraFeaturePage() {
               onClick={() => setAsesoriasSubTab('mis-asesorias')}
               className={`px-4 py-2 flex items-center gap-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
                 asesoriasSubTab === 'mis-asesorias'
-                  ? 'bg-slate-800 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-zinc-100 text-zinc-900 shadow-sm border border-zinc-300'
+                  : 'text-zinc-600 hover:text-zinc-900'
               }`}
             >
               <CheckCircle2 size={16} aria-hidden="true" /> Mis Asesorías (
               {enrolledAdvisories.length})
             </button>
           </div>
+
           {listError && (
             <div
               role="alert"
-              className="mb-5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300"
+              className="mb-5 rounded-lg border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700"
             >
               {listError}
             </div>
@@ -362,13 +439,14 @@ export default function ExtraFeaturePage() {
           {asesoriasSubTab === 'mis-asesorias' && misAsesoriasError && (
             <div
               role="alert"
-              className="mb-5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300"
+              className="mb-5 rounded-lg border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700"
             >
               {misAsesoriasError}
             </div>
           )}
+
           {asesoriasSubTab === 'explorar' && activeAdvisories.length === 0 ? (
-            <div className="rounded-xl border border-slate-800 bg-slate-900 p-10 text-center text-slate-400">
+            <div className="rounded-xl border border-zinc-300 bg-zinc-100 p-10 text-center text-zinc-600">
               No hay asesorías activas disponibles en este momento.
             </div>
           ) : asesoriasSubTab === 'explorar' ? (
@@ -385,44 +463,41 @@ export default function ExtraFeaturePage() {
                 return (
                   <article
                     key={asesoria.id}
-                    className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm flex flex-col justify-between"
+                    className="bg-zinc-100 border border-zinc-300 rounded-xl p-6 shadow-sm flex flex-col justify-between"
                   >
                     <div>
                       <div className="flex justify-between items-start mb-3 gap-3">
-                        <span className="bg-blue-500/10 text-blue-400 text-xs px-2 py-1 rounded font-bold">
+                        <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs px-2.5 py-1 rounded font-semibold">
                           {asesoria.modalidad || 'Modalidad no indicada'}
                         </span>
-                        <span className="text-xs text-slate-500 font-mono">
+                        <span className="text-xs text-zinc-500 font-mono font-medium">
                           {occupied} / {maximum} inscritos
                         </span>
                       </div>
-                      <h2 className="text-lg font-bold text-white mb-1 leading-tight">
+                      <h2 className="text-lg font-bold text-zinc-900 mb-1 leading-tight">
                         {asesoria.materia}
                       </h2>
-                      <p className="text-sm text-slate-400 mb-4">
-                        Mentor: {asesoria.mentor}
+                      <p className="text-sm text-zinc-600 mb-4">
+                        Mentor: <span className="text-zinc-800 font-medium">{asesoria.mentor}</span>
                       </p>
-                      <div className="space-y-2">
-                        <div className="bg-slate-950 p-3 rounded-lg text-sm flex items-center gap-3">
+                      <div className="space-y-2 mb-4 bg-zinc-200/70 p-3 rounded-lg border border-zinc-300">
+                        <div className="flex items-center gap-3 text-sm text-zinc-700">
                           <Calendar
                             size={16}
-                            className="text-slate-500 shrink-0"
+                            className="text-zinc-500 shrink-0"
                             aria-hidden="true"
                           />
-                          <span className="text-slate-300">
+                          <span>
                             {asesoria.horario || 'Horario por definir'}
                           </span>
                         </div>
-                        <div className="bg-slate-950 p-3 rounded-lg text-sm flex items-center gap-3">
+                        <div className="flex items-center gap-3 text-sm text-zinc-700">
                           <Info
                             size={16}
-                            className="text-slate-500 shrink-0"
+                            className="text-zinc-500 shrink-0"
                             aria-hidden="true"
                           />
-                          <span className="text-slate-400">Aula:</span>
-                          <span className="font-semibold text-slate-300">
-                            {asesoria.salon || 'Por confirmar'}
-                          </span>
+                          <span>Aula: <span className="font-semibold text-zinc-900">{asesoria.salon || 'Por confirmar'}</span></span>
                         </div>
                       </div>
                     </div>
@@ -430,11 +505,12 @@ export default function ExtraFeaturePage() {
                       type="button"
                       onClick={() => handleInscribir(asesoria)}
                       disabled={full || isEnrolled || Boolean(busyAction)}
-                      className={`mt-6 w-full py-2.5 font-medium rounded-lg transition-colors ${
-                        isEnrolled
-                          ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-                          : 'bg-blue-600 hover:bg-blue-700 disabled:bg-slate-800 disabled:text-slate-500 text-white'
-                      }`}
+                      className={`mt-4 w-full py-2.5 font-semibold rounded-lg transition-colors flex justify-center items-center gap-2 
+                        ${isEnrolled 
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-400' 
+                          : full 
+                            ? 'bg-zinc-300 text-zinc-500 cursor-not-allowed border border-zinc-300' 
+                            : 'bg-emerald-700 hover:bg-emerald-800 text-white shadow'}`}
                     >
                       {isBusy
                         ? 'Inscribiendo...'
@@ -449,52 +525,52 @@ export default function ExtraFeaturePage() {
               })}
             </div>
           ) : enrolledAdvisories.length === 0 ? (
-            <div className="rounded-xl border border-slate-800 bg-slate-900 p-10 text-center text-slate-400">
+            <div className="rounded-xl border border-zinc-300 bg-zinc-100 p-10 text-center text-zinc-600">
               <CheckCircle2
                 size={48}
-                className="mx-auto mb-4 opacity-20"
+                className="mx-auto mb-4 opacity-30 text-zinc-600"
                 aria-hidden="true"
               />
-              Aún no te has inscrito a ninguna asesoría.
+              <p className="font-medium text-zinc-700">Aún no te has inscrito a ninguna asesoría.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {enrolledAdvisories.map((asesoria) => (
                 <article
                   key={asesoria.id}
-                  className="bg-emerald-900/10 border border-emerald-500/30 rounded-xl p-6 shadow-sm flex flex-col justify-between"
+                  className="bg-zinc-100 border-2 border-emerald-500/50 rounded-xl p-6 shadow-sm flex flex-col justify-between"
                 >
                   <div>
                     <div className="flex justify-between items-start mb-3 gap-3">
-                      <span className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-1 rounded font-bold flex items-center gap-1">
+                      <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs px-2.5 py-1 rounded font-bold flex items-center gap-1">
                         <CheckCircle2 size={12} aria-hidden="true" /> Confirmada
                       </span>
-                      <span className="text-xs text-slate-400">
+                      <span className="text-xs text-zinc-500">
                         {asesoria.modalidad || 'Modalidad no indicada'}
                       </span>
                     </div>
-                    <h2 className="text-lg font-bold text-white mb-1 leading-tight">
+                    <h2 className="text-lg font-bold text-zinc-900 mb-1 leading-tight">
                       {asesoria.materia}
                     </h2>
-                    <p className="text-sm text-slate-400 mb-4">
-                      Mentor: {asesoria.mentor}
+                    <p className="text-sm text-zinc-600 mb-4">
+                      Mentor: <span className="text-zinc-800 font-medium">{asesoria.mentor}</span>
                     </p>
-                    <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-800 space-y-2 mb-4">
-                      <div className="flex items-center gap-3 text-sm text-slate-200">
+                    <div className="bg-zinc-200/80 p-3 rounded-lg border border-zinc-300 space-y-2 mb-4">
+                      <div className="flex items-center gap-3 text-sm text-zinc-800">
                         <Calendar
                           size={16}
-                          className="text-blue-400 shrink-0"
+                          className="text-emerald-700 shrink-0"
                           aria-hidden="true"
                         />
                         <span>{asesoria.horario || 'Horario por definir'}</span>
                       </div>
-                      <div className="flex items-center gap-3 text-sm text-slate-200">
+                      <div className="flex items-center gap-3 text-sm text-zinc-800">
                         <Info
                           size={16}
-                          className="text-amber-400 shrink-0"
+                          className="text-amber-700 shrink-0"
                           aria-hidden="true"
                         />
-                        <span>{asesoria.salon || 'Aula por confirmar'}</span>
+                        <span><span className="font-semibold text-zinc-900">{asesoria.salon || 'Aula por confirmar'}</span></span>
                       </div>
                     </div>
                   </div>
@@ -502,7 +578,7 @@ export default function ExtraFeaturePage() {
                     type="button"
                     disabled={Boolean(busyAction)}
                     onClick={() => handleCancelarInscripcion(asesoria)}
-                    className="mt-2 w-full py-2.5 bg-transparent border border-rose-500/30 text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/50 disabled:opacity-50 font-medium rounded-lg transition-colors flex justify-center items-center gap-2"
+                    className="mt-2 w-full py-2.5 bg-zinc-200 border border-rose-400 text-rose-700 hover:bg-rose-100 disabled:opacity-50 font-semibold rounded-lg transition-colors flex justify-center items-center gap-2"
                   >
                     <XCircle size={16} aria-hidden="true" />
                     {busyAction === `cancelar-${asesoria.id}`
@@ -521,7 +597,7 @@ export default function ExtraFeaturePage() {
           {diagnosticoError && (
             <div
               role="alert"
-              className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-300"
+              className="rounded-xl border border-rose-300 bg-rose-50 p-4 text-sm text-rose-700"
             >
               {diagnosticoError}
             </div>
@@ -531,15 +607,15 @@ export default function ExtraFeaturePage() {
               <div
                 className={`p-6 border rounded-xl flex items-start gap-4 ${
                   diagnostico.estadoGeneral === 'Óptimo'
-                    ? 'bg-emerald-500/10 border-emerald-500/20'
-                    : 'bg-rose-500/10 border-rose-500/20'
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                    : 'bg-rose-50 border-rose-300 text-rose-900'
                 }`}
               >
                 <Activity
                   className={
                     diagnostico.estadoGeneral === 'Óptimo'
-                      ? 'text-emerald-500'
-                      : 'text-rose-500'
+                      ? 'text-emerald-700'
+                      : 'text-rose-700'
                   }
                   size={32}
                   aria-hidden="true"
@@ -548,17 +624,17 @@ export default function ExtraFeaturePage() {
                   <h2
                     className={`text-xl font-bold ${
                       diagnostico.estadoGeneral === 'Óptimo'
-                        ? 'text-emerald-400'
-                        : 'text-rose-400'
+                        ? 'text-emerald-800'
+                        : 'text-rose-800'
                     }`}
                   >
                     {diagnostico.estadoGeneral}
                   </h2>
-                  <p className="text-slate-300 mt-1">{diagnostico.mensaje}</p>
-                  <p className="text-xs text-slate-500 mt-2 font-mono">
+                  <p className="text-zinc-700 mt-1">{diagnostico.mensaje}</p>
+                  <p className="text-xs text-zinc-500 mt-2 font-mono">
                     Motor Analítico: {diagnostico.source || 'Supabase Edge Function'}
                   </p>
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className="text-xs text-zinc-500 mt-1">
                     Créditos aprobados: {diagnostico.creditosAprobados ?? 0}
                   </p>
                 </div>
@@ -566,39 +642,36 @@ export default function ExtraFeaturePage() {
 
               {diagnostico.materiasEnRiesgo?.length > 0 && (
                 <section>
-                  <h3 className="text-lg font-bold mb-4">
+                  <h3 className="text-lg font-bold text-zinc-900 mb-4">
                     Materias con Atención Requerida
                   </h3>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {diagnostico.materiasEnRiesgo.map((riesgo, index) => (
                       <article
                         key={`${riesgo.clave || riesgo.materia || 'riesgo'}-${index}`}
-                        className="bg-slate-900 border border-slate-800 p-5 rounded-xl border-l-4 border-l-rose-500"
+                        className="bg-zinc-100 border border-zinc-300 p-5 rounded-xl border-l-4 border-l-rose-600 shadow-sm"
                       >
                         <div className="flex justify-between gap-3">
-                          <h4 className="font-bold text-white mb-1">
+                          <h4 className="font-bold text-zinc-900 mb-1">
                             {riesgo.materia || 'Materia sin nombre'}
                           </h4>
-                          <span className="text-xs text-rose-300">
+                          <span className="text-xs text-rose-700">
                             {riesgo.nivelRiesgo}
                           </span>
                         </div>
-                        <p className="text-sm text-slate-400 mb-3 font-mono">
+                        <p className="text-sm text-zinc-500 mb-3 font-mono">
                           {riesgo.clave || 'Sin clave'}
                         </p>
-                        <div className="bg-slate-950 p-3 rounded-lg text-sm">
-                          <p className="text-rose-400 font-medium">
+                        <div className="flex justify-between items-center bg-zinc-200/80 p-3 rounded-lg text-sm border border-zinc-300">
+                          <span className="text-rose-700 font-bold">
                             {riesgo.unidadesReprobadas} unidades en riesgo
-                          </p>
-                          <p className="text-slate-400 mt-1">
-                            {riesgo.recomendacion}
-                          </p>
+                          </span>
                           <button
                             type="button"
-                            onClick={() => setActiveTab('asesorias')}
-                            className="mt-2 text-blue-400 hover:text-blue-300 text-xs font-bold underline"
+                            onClick={() => { setActiveTab('asesorias'); setAsesoriasSubTab('explorar'); }}
+                            className="text-emerald-800 hover:text-emerald-900 text-xs font-bold underline"
                           >
-                            Ver asesorías disponibles
+                            {riesgo.recomendacion}
                           </button>
                         </div>
                       </article>
@@ -609,7 +682,7 @@ export default function ExtraFeaturePage() {
             </>
           )}
           {!diagnostico && !diagnosticoError && (
-            <p className="text-slate-400">Aún no hay diagnóstico disponible.</p>
+            <p className="text-zinc-600">Aún no hay diagnóstico disponible.</p>
           )}
         </div>
       )}
@@ -619,22 +692,49 @@ export default function ExtraFeaturePage() {
           {listError && (
             <div
               role="alert"
-              className="mb-5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300"
+              className="mb-5 rounded-lg border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700"
             >
               {listError}
             </div>
           )}
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-            <section className="xl:col-span-1 bg-slate-900 border border-slate-800 rounded-xl p-6 h-fit">
-              <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
-                <Plus size={18} className="text-emerald-500" />
-                Nueva Asesoría
-              </h2>
-              <form onSubmit={handleCrear} className="space-y-4">
+            <section
+              className={`xl:col-span-1 border rounded-xl p-6 h-fit transition-colors ${
+                editingId
+                  ? 'bg-blue-50 border-blue-300'
+                  : 'bg-zinc-100 border-zinc-300'
+              }`}
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="font-bold text-lg text-zinc-900 flex items-center gap-2">
+                  {editingId ? (
+                    <>
+                      <Edit2 size={18} className="text-blue-700" />
+                      Editar Asesoría
+                    </>
+                  ) : (
+                    <>
+                      <Plus size={18} className="text-emerald-700" />
+                      Nueva Asesoría
+                    </>
+                  )}
+                </h2>
+                {editingId && (
+                  <button
+                    type="button"
+                    disabled={Boolean(busyAction)}
+                    onClick={handleCancelEdit}
+                    className="text-zinc-600 hover:text-zinc-900 disabled:opacity-50 flex items-center gap-1 text-xs"
+                  >
+                    <X size={14} aria-hidden="true" /> Cancelar
+                  </button>
+                )}
+              </div>
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label
                     htmlFor="asesoria-materia"
-                    className="text-xs text-slate-400 mb-1 block"
+                    className="text-xs font-medium text-zinc-700 mb-1 block"
                   >
                     Materia Objetivo
                   </label>
@@ -647,13 +747,13 @@ export default function ExtraFeaturePage() {
                     onChange={(event) =>
                       setNewForm({ ...newForm, materia: event.target.value })
                     }
-                    className="w-full px-4 py-2 bg-slate-950 text-slate-100 border border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full px-4 py-2 bg-zinc-100 text-zinc-900 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-emerald-600 focus:outline-none"
                   />
                 </div>
                 <div>
                   <label
                     htmlFor="asesoria-mentor"
-                    className="text-xs text-slate-400 mb-1 block"
+                    className="text-xs font-medium text-zinc-700 mb-1 block"
                   >
                     Nombre del Mentor
                   </label>
@@ -666,14 +766,97 @@ export default function ExtraFeaturePage() {
                     onChange={(event) =>
                       setNewForm({ ...newForm, mentor: event.target.value })
                     }
-                    className="w-full px-4 py-2 bg-slate-950 text-slate-100 border border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full px-4 py-2 bg-zinc-100 text-zinc-900 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-emerald-600 focus:outline-none"
                   />
+                </div>
+                <div>
+                  <span className="text-xs font-medium text-zinc-700 mb-1.5 block">
+                    Días de impartición
+                  </span>
+                  <div className="grid grid-cols-3 gap-2">
+                    {DIAS_OPCIONES.map((dia) => {
+                      const selected = newForm.dias.includes(dia);
+                      return (
+                        <button
+                          type="button"
+                          key={dia}
+                          aria-pressed={selected}
+                          onClick={() => toggleDia(dia)}
+                          className={`py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                            selected
+                              ? 'bg-emerald-700 text-white border-emerald-700'
+                              : 'bg-zinc-200 text-zinc-700 border-zinc-300 hover:border-zinc-400'
+                          }`}
+                        >
+                          {dia}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label
+                      htmlFor="asesoria-hora-inicio"
+                      className="text-xs font-medium text-zinc-700 mb-1 block"
+                    >
+                      Hora de inicio
+                    </label>
+                    <div className="relative">
+                      <Clock
+                        size={16}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none"
+                        aria-hidden="true"
+                      />
+                      <input
+                        id="asesoria-hora-inicio"
+                        required
+                        type="time"
+                        value={newForm.hora_inicio}
+                        onChange={(event) =>
+                          setNewForm({
+                            ...newForm,
+                            hora_inicio: event.target.value,
+                          })
+                        }
+                        className="w-full px-4 py-2 pl-9 bg-zinc-100 text-zinc-900 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="asesoria-hora-fin"
+                      className="text-xs font-medium text-zinc-700 mb-1 block"
+                    >
+                      Hora de fin
+                    </label>
+                    <div className="relative">
+                      <Clock
+                        size={16}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none"
+                        aria-hidden="true"
+                      />
+                      <input
+                        id="asesoria-hora-fin"
+                        required
+                        type="time"
+                        value={newForm.hora_fin}
+                        onChange={(event) =>
+                          setNewForm({
+                            ...newForm,
+                            hora_fin: event.target.value,
+                          })
+                        }
+                        className="w-full px-4 py-2 pl-9 bg-zinc-100 text-zinc-900 border border-zinc-300 rounded-lg focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                      />
+                    </div>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label
                       htmlFor="asesoria-modalidad"
-                      className="text-xs text-slate-400 mb-1 block"
+                      className="text-xs font-medium text-zinc-700 mb-1 block"
                     >
                       Modalidad
                     </label>
@@ -683,7 +866,7 @@ export default function ExtraFeaturePage() {
                       onChange={(event) =>
                         setNewForm({ ...newForm, modalidad: event.target.value })
                       }
-                      className="w-full px-4 py-2 bg-slate-950 text-slate-100 border border-slate-700 rounded-lg"
+                      className="w-full px-4 py-2 bg-zinc-100 text-zinc-900 border border-zinc-300 rounded-lg"
                     >
                       <option>Presencial</option>
                       <option>En Línea</option>
@@ -693,7 +876,7 @@ export default function ExtraFeaturePage() {
                   <div>
                     <label
                       htmlFor="asesoria-cupo"
-                      className="text-xs text-slate-400 mb-1 block"
+                      className="text-xs font-medium text-zinc-700 mb-1 block"
                     >
                       Cupo Máx
                     </label>
@@ -710,34 +893,14 @@ export default function ExtraFeaturePage() {
                           cupo_maximo: event.target.value,
                         })
                       }
-                      className="w-full px-4 py-2 bg-slate-950 text-slate-100 border border-slate-700 rounded-lg focus:outline-none"
+                      className="w-full px-4 py-2 bg-zinc-100 text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none"
                     />
                   </div>
                 </div>
                 <div>
                   <label
-                    htmlFor="asesoria-horario"
-                    className="text-xs text-slate-400 mb-1 block"
-                  >
-                    Día y horario
-                  </label>
-                  <input
-                    id="asesoria-horario"
-                    required
-                    maxLength={150}
-                    type="text"
-                    placeholder="Ej. Lunes y Miércoles 16:00 - 18:00"
-                    value={newForm.horario}
-                    onChange={(event) =>
-                      setNewForm({ ...newForm, horario: event.target.value })
-                    }
-                    className="w-full px-4 py-2 bg-slate-950 text-slate-100 border border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label
                     htmlFor="asesoria-salon"
-                    className="text-xs text-slate-400 mb-1 block"
+                    className="text-xs font-medium text-zinc-700 mb-1 block"
                   >
                     Aula / Plataforma
                   </label>
@@ -750,55 +913,74 @@ export default function ExtraFeaturePage() {
                     onChange={(event) =>
                       setNewForm({ ...newForm, salon: event.target.value })
                     }
-                    className="w-full px-4 py-2 bg-slate-950 text-slate-100 border border-slate-700 rounded-lg focus:outline-none"
+                    className="w-full px-4 py-2 bg-zinc-100 text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={Boolean(busyAction)}
-                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white rounded-lg font-medium mt-2"
+                  className={`w-full py-2.5 disabled:opacity-60 text-white rounded-lg font-semibold mt-2 transition-colors ${
+                    editingId
+                      ? 'bg-blue-700 hover:bg-blue-800'
+                      : 'bg-emerald-700 hover:bg-emerald-800'
+                  }`}
                 >
-                  {busyAction === 'crear' ? 'Registrando...' : 'Registrar Programa'}
+                  {busyAction === 'crear'
+                    ? 'Registrando...'
+                    : editingId && busyAction === `actualizar-${editingId}`
+                      ? 'Guardando...'
+                      : editingId
+                        ? 'Guardar Cambios'
+                        : 'Registrar Programa'}
                 </button>
               </form>
             </section>
 
-            <section className="xl:col-span-2 bg-slate-900 border border-slate-800 rounded-xl overflow-hidden overflow-x-auto">
+            <section className="xl:col-span-2 bg-zinc-100 border border-zinc-300 rounded-xl overflow-hidden overflow-x-auto shadow-sm">
               <table className="w-full text-left text-sm whitespace-nowrap">
-                <thead className="bg-slate-950 text-slate-400 border-b border-slate-800">
+                <thead className="bg-zinc-200/90 text-zinc-700 border-b border-zinc-300">
                   <tr>
-                    <th scope="col" className="px-6 py-4">Materia</th>
-                    <th scope="col" className="px-6 py-4">Mentor</th>
-                    <th scope="col" className="px-6 py-4">Horario</th>
-                    <th scope="col" className="px-6 py-4 text-center">
-                      Inscritos
+                    <th scope="col" className="px-6 py-4 font-bold">Materia</th>
+                    <th scope="col" className="px-6 py-4 font-bold">Mentor</th>
+                    <th scope="col" className="px-6 py-4 font-bold">Horario</th>
+                    <th scope="col" className="px-6 py-4 text-center font-bold">
+                      Cupo
                     </th>
-                    <th scope="col" className="px-6 py-4 text-center">Estado</th>
-                    <th scope="col" className="px-6 py-4 text-right">Acciones</th>
+                    <th scope="col" className="px-6 py-4 text-center font-bold">Estado</th>
+                    <th scope="col" className="px-6 py-4 text-right font-bold">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/50">
+                <tbody className="divide-y divide-zinc-300">
                   {asesorias.map((asesoria) => (
-                    <tr key={asesoria.id}>
-                      <td className="px-6 py-4 font-medium">
+                    <tr
+                      key={asesoria.id}
+                      className={
+                        String(editingId) === String(asesoria.id)
+                          ? 'bg-blue-50'
+                          : 'hover:bg-zinc-200/50'
+                      }
+                    >
+                      <td className="px-6 py-4 font-semibold text-zinc-900">
                         {asesoria.materia}
                       </td>
-                      <td className="px-6 py-4 text-slate-400">
+                      <td className="px-6 py-4 text-zinc-600">
                         {asesoria.mentor}
                       </td>
-                      <td className="px-6 py-4 text-slate-400">
+                      <td className="px-6 py-4 text-zinc-600 text-xs font-mono">
                         {asesoria.horario || 'Por definir'}
                       </td>
-                      <td className="px-6 py-4 text-center font-mono">
+                      <td className="px-6 py-4 text-center font-mono font-medium">
                         {asesoria.cupo_ocupado}/{asesoria.cupo_maximo}
                       </td>
                       <td className="px-6 py-4 text-center">
                         <span
-                          className={`px-2 py-1 rounded text-xs ${
+                          className={`px-2.5 py-1 rounded text-xs font-bold cursor-pointer select-none transition-colors ${
                             asesoria.estado === 'Activa'
-                              ? 'bg-emerald-500/10 text-emerald-500'
-                              : 'bg-amber-500/10 text-amber-500'
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                              : 'bg-amber-100 text-amber-800 border border-amber-300'
                           }`}
+                          onClick={() => handleEstado(asesoria)}
+                          title="Clic para cambiar estado"
                         >
                           {asesoria.estado}
                         </span>
@@ -808,16 +990,16 @@ export default function ExtraFeaturePage() {
                           <button
                             type="button"
                             disabled={Boolean(busyAction)}
-                            onClick={() => handleEstado(asesoria)}
-                            className="text-xs px-3 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 rounded text-slate-300 transition-colors"
+                            onClick={() => handleEdit(asesoria)}
+                            className="text-xs px-3 py-1 bg-zinc-200 hover:bg-zinc-300 disabled:opacity-50 border border-zinc-300 rounded text-zinc-800 font-medium transition-colors"
                           >
-                            {asesoria.estado === 'Activa' ? 'Pausar' : 'Aprobar'}
+                            Editar
                           </button>
                           <button
                             type="button"
                             disabled={Boolean(busyAction)}
                             onClick={() => handleDelete(asesoria)}
-                            className="text-xs px-3 py-1 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 disabled:opacity-50 rounded transition-colors"
+                            className="text-xs px-3 py-1 bg-rose-100 text-rose-700 hover:bg-rose-200 disabled:opacity-50 border border-rose-300 rounded font-medium transition-colors"
                           >
                             Eliminar
                           </button>
@@ -829,7 +1011,7 @@ export default function ExtraFeaturePage() {
                     <tr>
                       <td
                         colSpan={6}
-                        className="px-6 py-8 text-center text-slate-400"
+                        className="px-6 py-8 text-center text-zinc-600"
                       >
                         No hay asesorías registradas.
                       </td>
