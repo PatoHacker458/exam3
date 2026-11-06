@@ -1,5 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import api, { TOKEN_STORAGE_KEY, USER_EMAIL_STORAGE_KEY } from '../services/api.js';
+import api, {
+  setAuthToken,
+  getAuthToken,
+  clearAuthToken,
+} from '../services/api.js';
 
 const AuthContext = createContext(null);
 
@@ -61,27 +65,16 @@ export function AuthProvider({ children }) {
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [sessionAlert, setSessionAlert] = useState('');
 
-  // Inicializar estado de sesión desde localStorage verificando vigencia del JWT
+  // Limpiar cualquier rastro previo en localStorage/sessionStorage al iniciar para no exponer tokens en DevTools
   useEffect(() => {
-    // TODO(security): Almacenamiento de JWT en localStorage requerido por la especificación
-    // arquitectónica del examen. Se valida expiración (`exp`) en cada carga y cambio de ruta.
-    const savedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
-    const savedEmail = localStorage.getItem(USER_EMAIL_STORAGE_KEY) || '';
-
-    if (savedToken && !isJwtExpired(savedToken)) {
-      setToken(savedToken);
-      setUserEmail(savedEmail);
-    } else if (savedToken) {
-      localStorage.removeItem(TOKEN_STORAGE_KEY);
-      localStorage.removeItem(USER_EMAIL_STORAGE_KEY);
-      setSessionAlert('Tu sesión anterior ha expirado. Por favor inicia sesión de nuevo.');
-    }
+    clearAuthToken();
     setIsLoadingAuth(false);
   }, []);
 
   // Escuchar evento global disparado por el interceptor de Axios cuando el SII devuelve 401
   useEffect(() => {
     const handleSessionExpired = (event) => {
+      clearAuthToken();
       setToken(null);
       setUserEmail('');
       setSessionAlert(
@@ -134,8 +127,7 @@ export function AuthProvider({ children }) {
         };
       }
 
-      localStorage.setItem(TOKEN_STORAGE_KEY, extractedToken);
-      localStorage.setItem(USER_EMAIL_STORAGE_KEY, cleanEmail);
+      setAuthToken(extractedToken);
       setToken(extractedToken);
       setUserEmail(cleanEmail);
 
@@ -178,11 +170,10 @@ export function AuthProvider({ children }) {
   }, []);
 
   /**
-   * Cierra la sesión limpiando almacenamiento, estado en memoria y redirigiendo a /login
+   * Cierra la sesión limpiando memoria privada y redirigiendo a /login
    */
   const logout = useCallback(() => {
-    localStorage.removeItem(TOKEN_STORAGE_KEY);
-    localStorage.removeItem(USER_EMAIL_STORAGE_KEY);
+    clearAuthToken();
     setToken(null);
     setUserEmail('');
     setSessionAlert('');
@@ -190,14 +181,13 @@ export function AuthProvider({ children }) {
   }, []);
 
   /**
-   * Verifica activamente si el token actual sigue siendo válido.
+   * Verifica activamente si el token actual en memoria sigue siendo válido.
    */
   const verifySession = useCallback(() => {
-    const currentToken = localStorage.getItem(TOKEN_STORAGE_KEY);
+    const currentToken = getAuthToken() || token;
     if (!currentToken || isJwtExpired(currentToken)) {
       if (token) {
-        localStorage.removeItem(TOKEN_STORAGE_KEY);
-        localStorage.removeItem(USER_EMAIL_STORAGE_KEY);
+        clearAuthToken();
         setToken(null);
         setUserEmail('');
         setSessionAlert('Tu sesión ha expirado. Por favor inicia sesión nuevamente.');

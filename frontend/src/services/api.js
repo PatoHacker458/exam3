@@ -3,6 +3,30 @@ import axios from 'axios';
 export const TOKEN_STORAGE_KEY = 'sii_jwt_token';
 export const USER_EMAIL_STORAGE_KEY = 'sii_user_email';
 
+// Almacenamiento seguro en memoria privada (closure) para no exponer el JWT ni el correo en localStorage/DevTools
+let inMemoryToken = null;
+
+export function setAuthToken(newToken) {
+  inMemoryToken =
+    typeof newToken === 'string' && newToken.trim() ? newToken.trim() : null;
+}
+
+export function getAuthToken() {
+  return inMemoryToken;
+}
+
+export function clearAuthToken() {
+  inMemoryToken = null;
+  try {
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    localStorage.removeItem(USER_EMAIL_STORAGE_KEY);
+    sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+    sessionStorage.removeItem(USER_EMAIL_STORAGE_KEY);
+  } catch (_err) {
+    // Ignorar restricciones de acceso a Web Storage
+  }
+}
+
 const getBaseUrl = () => {
   const envUrl = import.meta.env.VITE_API_URL;
   if (envUrl && !envUrl.includes('localhost')) {
@@ -20,12 +44,10 @@ const api = axios.create({
   },
 });
 
-// Interceptor de solicitud: adjunta automáticamente Authorization: Bearer <token>
+// Interceptor de solicitud: adjunta automáticamente Authorization: Bearer <token> desde memoria privada
 api.interceptors.request.use(
   (config) => {
-    // TODO(security): Se lee el token desde localStorage por requerimiento explícito de la
-    // arquitectura del proyecto. En entornos bancarios/empresariales se recomienda cookie HttpOnly.
-    const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+    const token = inMemoryToken;
     if (token && token !== 'null' && token !== 'undefined') {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -42,8 +64,7 @@ api.interceptors.response.use(
     const isLoginEndpoint = requestUrl.includes('/login');
 
     if (error?.response?.status === 401 && !isLoginEndpoint) {
-      localStorage.removeItem(TOKEN_STORAGE_KEY);
-      localStorage.removeItem(USER_EMAIL_STORAGE_KEY);
+      clearAuthToken();
       window.dispatchEvent(
         new CustomEvent('sii:session-expired', {
           detail: {

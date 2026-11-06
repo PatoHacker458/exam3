@@ -9,13 +9,10 @@ const SII_API_BASE_URL = (
   process.env.SII_API_BASE_URL || 'https://sii.celaya.tecnm.mx/api'
 ).replace(/\/+$/, '');
 
-// TODO(security): Se configura rejectUnauthorized: false en el agente HTTPS para tolerar
-// certificados intermedios institucionales de sii.celaya.tecnm.mx dentro de contenedores Alpine.
 const httpsAgent = new https.Agent({
   rejectUnauthorized: false,
 });
 
-// Instancia Axios dedicada hacia el API institucional SII ITC Celaya
 const siiClient = axios.create({
   baseURL: SII_API_BASE_URL,
   timeout: 15000,
@@ -26,17 +23,7 @@ const siiClient = axios.create({
   },
 });
 
-/**
- * Extrae el token JWT desde las posibles estructuras de respuesta del SII ITC.
- * Ejemplo oficial SII ITC:
- * {
- *   "responseCodeTxt": "200 OK",
- *   "message": { "login": { "token": "eyJ0eXAi..." } },
- *   "status": 200,
- *   "flag": "success",
- *   "data": 200
- * }
- */
+
 function extractJwtToken(data) {
   if (!data || typeof data !== 'object') return null;
 
@@ -55,10 +42,7 @@ function extractJwtToken(data) {
   return null;
 }
 
-/**
- * Determina si el cuerpo de respuesta del SII indica un fallo de autenticación
- * incluso cuando el código HTTP devuelto por Apache es 200 OK.
- */
+
 function isSiiUnauthorizedPayload(payload) {
   if (!payload || typeof payload !== 'object') return false;
   if (payload.status === 401 || payload.data === 401 || payload.status === 403) {
@@ -75,9 +59,6 @@ function isSiiUnauthorizedPayload(payload) {
   return false;
 }
 
-/**
- * Intenta autenticar contra POST /login del SII ITC y devuelve { token, data } si tiene éxito.
- */
 async function attemptSiiLogin(emailCandidate, password) {
   const response = await siiClient.post('/login', {
     email: emailCandidate,
@@ -97,12 +78,8 @@ async function attemptSiiLogin(emailCandidate, password) {
   return { ok: true, data, token, emailUsed: emailCandidate };
 }
 
-/**
- * 1. POST /api/sii/login
- * Autentica al estudiante contra POST https://sii.celaya.tecnm.mx/api/login
- * Si el correo inicia con 'l' minúscula (ej. l22030915@celaya.tecnm.mx) y el primer intento falla,
- * reintenta automáticamente con 'L' mayúscula (L22030915@celaya.tecnm.mx).
- */
+
+
 router.post('/login', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
 
